@@ -1,6 +1,6 @@
 <mxfile host="app.diagrams.net" agent="Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:145.0) Gecko/20100101 Firefox/145.0" version="29.2.1">
   <diagram name="Page-1" id="VqhIBCwP3dkFzEv4HFCC">
-    <mxGraphModel dx="2314" dy="808" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="850" pageHeight="1100" math="0" shadow="0">
+    <mxGraphModel dx="1845" dy="550" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="850" pageHeight="1100" math="0" shadow="0">
       <root>
         <mxCell id="0" />
         <mxCell id="1" parent="0" />
@@ -33,8 +33,14 @@
             <mxPoint x="-240" y="470" as="targetPoint" />
           </mxGeometry>
         </mxCell>
+        <mxCell id="O__BUuPsDyMnHWAYZm6_-15" edge="1" parent="1" source="aRE8G61iqKebt-RjK0kA-6" style="edgeStyle=none;curved=1;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;fontSize=12;startSize=8;endSize=8;" target="O__BUuPsDyMnHWAYZm6_-14" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
         <mxCell id="aRE8G61iqKebt-RjK0kA-6" parent="1" style="whiteSpace=wrap;html=1;" value="Mentee" vertex="1">
           <mxGeometry height="60" width="120" x="-150" y="305" as="geometry" />
+        </mxCell>
+        <mxCell id="O__BUuPsDyMnHWAYZm6_-19" edge="1" parent="1" source="aRE8G61iqKebt-RjK0kA-8" style="edgeStyle=none;curved=1;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;fontSize=12;startSize=8;endSize=8;" target="O__BUuPsDyMnHWAYZm6_-18" value="">
+          <mxGeometry relative="1" as="geometry" />
         </mxCell>
         <mxCell id="aRE8G61iqKebt-RjK0kA-8" parent="1" style="whiteSpace=wrap;html=1;" value="Mentor" vertex="1">
           <mxGeometry height="60" width="120" x="370" y="305" as="geometry" />
@@ -182,7 +188,7 @@
           <mxGeometry height="720" width="430" x="540" y="1340" as="geometry" />
         </mxCell>
         <mxCell id="aRE8G61iqKebt-RjK0kA-57" parent="1" style="text;html=1;whiteSpace=wrap;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;rounded=0;fontSize=16;" value="Demographic Information&lt;br&gt;(to provide information to mentees)" vertex="1">
-          <mxGeometry height="30" width="270" x="710" y="1300" as="geometry" />
+          <mxGeometry height="30" width="270" x="760" y="1290" as="geometry" />
         </mxCell>
         <mxCell id="aRE8G61iqKebt-RjK0kA-58" parent="1" style="shape=parallelogram;perimeter=parallelogramPerimeter;whiteSpace=wrap;html=1;fixedSize=1;" value="Time zone" vertex="1">
           <mxGeometry height="60" width="120" x="695" y="1450" as="geometry" />
@@ -283,6 +289,12 @@
         </mxCell>
         <mxCell id="O__BUuPsDyMnHWAYZm6_-12" parent="1" style="whiteSpace=wrap;html=1;" value="Other areas of experience" vertex="1">
           <mxGeometry height="60" width="120" x="745" y="1120" as="geometry" />
+        </mxCell>
+        <mxCell id="O__BUuPsDyMnHWAYZm6_-14" parent="1" style="shape=parallelogram;perimeter=parallelogramPerimeter;whiteSpace=wrap;html=1;fixedSize=1;" value="MBTI Personality Type" vertex="1">
+          <mxGeometry height="60" width="120" x="-150" y="485" as="geometry" />
+        </mxCell>
+        <mxCell id="O__BUuPsDyMnHWAYZm6_-18" parent="1" style="shape=parallelogram;perimeter=parallelogramPerimeter;whiteSpace=wrap;html=1;fixedSize=1;" value="&lt;div&gt;MBTI Personality&lt;/div&gt;&lt;div&gt;Type&lt;/div&gt;" vertex="1">
+          <mxGeometry height="60" width="120" x="560" y="280" as="geometry" />
         </mxCell>
       </root>
     </mxGraphModel>
