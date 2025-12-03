@@ -1,38 +1,23 @@
 import pandas as pd 
-import numpy as np
 
-from preprocessor_functions import make_lowercase
+from preprocessor_functions import *
+
 #loading dataset
 df=pd.read_excel('dataset.xlsx')
 
-#normalizing column headers
-df.columns=(df.columns
-            .str.lower()
-            .str.strip()
-            .str.replace(' ','_')
-            .str.replace(r'[^A-Za-z0-9_]','',regex=True)
-            )
+#normalize all the strings in the dataset
+df=normalize_string(df)
 
-#lowercasing dataset
-df.apply(make_lowercase)
-
-#convereted all empty strings into nan
-df=df.replace(r'^\s*$',np.nan,regex=True)
+#normalize expertise
+df=normalize_expertise(df, expertise_cols)
 
 # new df with rows that meet condition=original_dataframe[condition]
-mentors_df=df[df['role']=='Mentor']
-mentees_df=df[df['role']=='Mentee']
+mentors_df,mentees_df=split_df_by_role(df,'role')
 
-mentors_df=mentors_df.dropna(axis=1,how='all')
-mentees_df=mentees_df.dropna(axis=1,how='all')
+#drop empty columns in mentor-mentee dataset
+mentors_df=drop_empty_cols(mentors_df)
+mentees_df=drop_empty_cols(mentees_df)
 
-print("\n Mentor Headers\n")
-print(list(mentors_df.columns))
-
-print("\n Mentees Headers\n")
-print(list(mentees_df.columns))
-
-mentors_df.to_excel('mentors.xlsx')
-mentees_df.to_excel('mentees.xlsx')
-
-
+#one hot encode the categories
+mentors_df=one_hot_encode(mentors_df, one_hot_encoding_col['mentors'])
+mentees_df=one_hot_encode(mentees_df, one_hot_encoding_col['mentees'])
