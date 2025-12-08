@@ -46,7 +46,7 @@ def make_lowercase(col):
     else:
         return col
     
-def normalize_numeric(df,cols):
+def normalize_numeric(df,cols=numeric_cols):
     """
     Normalizes all the numeric values in the dataset
     In this project, this is used for ratings of their skill-sets by the mentors and mentees
@@ -144,3 +144,25 @@ def print_df_col_names(df):
     Print all columns names in the provided dataframe
     """
     print(df.columns,'\n\n')
+    return
+
+def get_mbti_list(df: pd.DataFrame,col_header:str='mbti_personality_type'):
+    """
+    Extracts MBTI personality types in a dataframe column as a list
+    Conversts the NaN values into None for continuous downstream processing
+
+    Returns:
+        mbti_list(list):
+            A list of MBTI personality types in the df, where missing values are converted to None
+
+    Parameters:
+        df(pandas.DataFrame):
+            Dataframe containing user data.
+        col_header(str):
+            name of the column containing the user MBTI personality type
+            Default 'mbti_personality_type'.
+    """
+    mbti_series=df[col_header]
+    mbti_series_cleaned=mbti_series.where(mbti_series.notna(), None)
+    mbti_list=mbti_series_cleaned.tolist()
+    return mbti_list

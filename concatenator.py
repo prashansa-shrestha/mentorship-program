@@ -51,8 +51,8 @@ if (len(mentors_numeric_cols)!=len(mentees_numeric_cols)):
 
 
 #all the numeric columns represented as a single 2D numpy array
-mentors_numeric_matrix = build_numeric_matrices(mentors_df, mentors_numeric_cols)
-mentees_numeric_matrix = build_numeric_matrices(mentees_df, mentees_numeric_cols)
+mentors_expertise_matrix = build_numeric_matrices(mentors_df, mentors_numeric_cols)
+mentees_expertise_matrix = build_numeric_matrices(mentees_df, mentees_numeric_cols)
 
 
 if ((mentors_numeric_matrix.shape[1])!=(mentees_numeric_matrix.shape[1])):
@@ -66,14 +66,12 @@ if ((mentors_numeric_matrix.shape[1])!=(mentees_numeric_matrix.shape[1])):
 #list of all features
 mentors_matrix_list = [
     mentors_concatenated_embedding_matrices,
-    mentors_one_hot_matrix,
-    mentors_numeric_matrix,
+    mentors_one_hot_matrix
 ]
 
 mentees_matrix_list = [
     mentees_concatenated_embedding_matrices,
-    mentees_one_hot_matrix,
-    mentees_numeric_matrix,
+    mentees_one_hot_matrix
 ]
 
 #dict representing all features

@@ -18,6 +18,14 @@ mentors_df,mentees_df=split_df_by_role(df,'role')
 mentors_df=drop_empty_cols(mentors_df)
 mentees_df=drop_empty_cols(mentees_df)
 
+#gets the number of mentors and mentees in the dataframe
+n_mentees=mentees_df.shape[0]
+n_mentors=mentors_df.shape[0]
+
+
+mentors_mbti=get_mbti_list(mentors_df)
+mentees_mbti=get_mbti_list(mentees_df)
+
 #one hot encode the categories
 mentors_one_hot_cols,mentors_df=one_hot_encode(
     mentors_df,

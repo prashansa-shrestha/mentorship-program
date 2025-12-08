@@ -1,17 +1,19 @@
 from embedder_functions import *
 from preprocessor import mentors_df, mentees_df
 
+mentors_embedded_df=mentors_df.copy() #intializing dataframe to integrate embeddings
+mentees_embedded_df=mentees_df.copy()
 
-mentors_df_emb,mentors_emb_cols=embed_text_cols(
-    mentors_df,
-    mentors_text_cols
-    )
+    
+mentors_embedded_df, mentors_embedded_col_headers= embed_df(
+    mentors_embedded_df, mentors_areas
+)
 
-mentees_df_emb,mentees_emb_cols=embed_text_cols(
-    mentees_df,
-    mentees_text_cols
-    )
+    
+mentees_embedded_df, mentees_embedded_col_headers= embed_df(
+    mentees_embedded_df, mentees_areas
+)
 
 
-mentors_df_emb.to_pickle("mentors_with_embeddings.pkl")
-mentees_df_emb.to_pickle("mentees_with_embeddings.pkl")
+mentors_embedded_df.to_pickle("mentors_with_embeddings.pkl")
+mentees_embedded_df.to_pickle("mentees_with_embeddings.pkl")
