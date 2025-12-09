@@ -1,4 +1,5 @@
 from sentence_transformers import SentenceTransformer
+import pandas as pd
 
 #column headers containing sentence text fields
 mentors_area1=[
@@ -61,7 +62,7 @@ def embed_text_cols(df,text_cols):
     return df, emb_cols
 
 
-def embed_df(embedded_df:pd.DataFrame, areas: list[str]):
+def embed_df(embedded_df:pd.DataFrame, areas: list[str])->tuple[pd.DataFrame, list[list[str]]]:
     """
     Embeds each interest area, and provides the information of column headers embedded
 

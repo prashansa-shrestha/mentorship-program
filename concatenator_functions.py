@@ -26,16 +26,15 @@ def block_to_matrix(df,col:str):
     return matrix
 
 
-def build_emb_matrices(df,emb_cols):
+def build_emb_matrices(df:pd.DataFrame,emb_cols:list[str]):
     """
+    For each column header in emb_cols, converts the column data into embedding
     Converts embedding columns in a DataFrame into stacked 2D numpy matrices
-    
-    Returns:
-        matrices: dict
-            each entry represents a matrix of an embedded column
-            key: string in the format "{col_without_emb}_matrix"
-                eg. "guidance_emb" -> "guidance_matrix"        
-            value: 2D numpt array of shape (n,d)
+    If the dimension is d, then the resulting numpy array has d columns
+
+        Returns:
+        matrix: np.ndarray
+            2D numpt array of shape (n,d)
                 n= number of rows in dataframe
                 d= embedding dimension of column
 
@@ -47,11 +46,10 @@ def build_emb_matrices(df,emb_cols):
             an embedding vector
     
     """
-    matrices={}
     for col in emb_cols:
         key=col.removesuffix('_emb')+'_matrix'
-        matrices[key]=block_to_matrix(df, col)
-    return matrices
+        matrix=block_to_matrix(df, col)
+    return matrix
 
 
 def build_numeric_matrices(df, numeric_cols):
@@ -109,3 +107,21 @@ def concatenate_matrices(matrix_list: list):
     """
     concatenated_matrix = np.concatenate([matrix for matrix in matrix_list], axis=1)
     return concatenated_matrix
+
+
+def build_emb_dict(df:pd.DataFrame, embedded_col_headers: list[list[str]])->dict:
+    """
+    Generates the embeddings for each list element in embedded_col_headers
+
+    Returns: 
+        area_embedding_matrices: dict
+            Key (str): area_i (eg. area_1, area_2)
+            Value (np.ndarray): embedding matrix for the paricular area
+
+    """
+    area_embedding_matrices={}
+    for i,col_list in enumerate(embedded_col_headers):  
+        value=build_emb_matrices(df,col_list)
+        key=f"area{i+1}"
+        area_embedding_matrices[key]=value
+    return area_embedding_matrices

@@ -1,4 +1,4 @@
-from embedder import mentors_emb_cols, mentees_emb_cols
+from embedder import mentors_embedded_col_headers, mentees_embedded_col_headers
 from preprocessor import (
     mentors_one_hot_cols,
     mentees_one_hot_cols,
@@ -9,27 +9,7 @@ from concatenator_functions import *
 
 #Key assumption:
 
-
-if (len(mentors_emb_cols)!=len(mentees_emb_cols)):
-    raise ValueError(
-        f"Embedding dimension mismatch:\n"
-        "Mentors have {len(mentors_emb_cols)} embedding columns\n"
-        "Mentees have {len(mentees_emb_cols)} embedding columns"
-    )
-
-#all the embedded columns represented as key value pairs in dictionary
-mentors_embedding_matrices_dict = build_emb_matrices(mentors_df, mentors_emb_cols)
-mentees_embedding_matrices_dict = build_emb_matrices(mentees_df, mentees_emb_cols)
-
-
-#all the embedded columns represented as a single 2D numpy array
-mentors_concatenated_embedding_matrices = concatenate_matrices_from_dict(
-    mentors_embedding_matrices_dict
-)
-mentees_concatenated_embedding_matrices = concatenate_matrices_from_dict(
-    mentees_embedding_matrices_dict
-)
-
+# ----ONE HOT COLS---
 if (len(mentors_one_hot_cols)!=len(mentees_one_hot_cols)):
     raise ValueError(
         f"One hot columns dimension mismatch:\n"
@@ -42,6 +22,8 @@ mentors_one_hot_matrix = build_numeric_matrices(mentors_df, mentors_one_hot_cols
 mentees_one_hot_matrix = build_numeric_matrices(mentees_df, mentees_one_hot_cols)
 
 
+
+# ----EXPERTISE NUMERIC COLS----
 if (len(mentors_numeric_cols)!=len(mentees_numeric_cols)):
     raise ValueError(
         f"Numeric columns dimension mismatch:\n"
@@ -55,12 +37,40 @@ mentors_expertise_matrix = build_numeric_matrices(mentors_df, mentors_numeric_co
 mentees_expertise_matrix = build_numeric_matrices(mentees_df, mentees_numeric_cols)
 
 
-if ((mentors_numeric_matrix.shape[1])!=(mentees_numeric_matrix.shape[1])):
+if ((mentors_expertise_matrix.shape[1])!=(mentees_expertise_matrix.shape[1])):
     raise ValueError(
         f"Numeric matrices dimension mismatch:\n"
         "Mentors have {mentors_numeric_matrix.shape[1]} columns"
         "Mentees have {mentees_numeric_matrix.shape[1]} columns"
     )
+
+
+# ----EMBEDDING COLUMNS----
+
+if (len(mentors_embedded_col_headers)!=len(mentees_embedded_col_headers)):
+    raise ValueError(
+        f"Embedding dimension mismatch:\n"
+        "Mentors have {len(mentors_embedded_col_headers)} embedding columns\n"
+        "Mentees have {len(mentees_embedded_col_headers)} embedding columns"
+    )
+
+#all the embedded columns represented as key value pairs in dictionary
+
+
+mentors_area_embedding_matrices_dict=build_emb_dict(mentors_df, mentors_embedded_col_headers)
+
+mentees_area_embedding_matrices_dict=build_emb_dict(mentees_df, mentees_embedded_col_headers)
+
+
+#all the embedded columns represented as a single 2D numpy array
+mentors_concatenated_embedding_matrices = concatenate_matrices_from_dict(
+    mentors_area_embedding_matrices_dict
+)
+mentees_concatenated_embedding_matrices = concatenate_matrices_from_dict(
+    mentees_area_embedding_matrices_dict
+)
+
+
 
 
 #list of all features
@@ -78,4 +88,9 @@ mentees_matrix_list = [
 feature_matrix = {
     "mentors":concatenate_matrices(mentors_matrix_list),
     "mentees":concatenate_matrices(mentees_matrix_list)
+}
+
+
+feature_matrix={
+    "mentors_area1":concatenate_matrices()
 }
