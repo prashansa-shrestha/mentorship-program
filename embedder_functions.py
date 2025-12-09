@@ -29,36 +29,71 @@ mentees_areas=[mentees_area1,mentees_area2,mentees_area3]
 
 model=SentenceTransformer("all-MiniLM-L6-v2")
 
-def embed_text_cols(df,text_cols):
+def embed_text_cols(df: pd.DataFrame, text_cols: list)->tuple[pd.DataFrame,list[str]]:
     """
     Generates embeddings for all specified text columns and appends
     them to the dataframe as new '{col}_emb' columns.
 
     Parameters:
-        df: pandas.Dataframe
+        df: pandas.DataFrame
             original dataframe which requires text embeddings
         text_cols: list
-            list which contains the column headers of the columns 
-            to be embedded
-    
+            list of column specifications. Each element can be:
+            - str: single column name to embed
+            - list of 2 strings: two columns to embed and average (2:3 ratio)
     Returns:
-        df: pandas.Dataframe
+        df: pandas.DataFrame
             dataframe with new embedding columns
-        emb_cols (list): list containing names of created embedding columns
+        emb_cols: list
+            list containing names of created embedding columns
     """
-    emb_cols=[]
-    for col in text_cols:
-        col_list=df[col].tolist()
+    emb_cols = []
 
-        print("Embedding the columns...\n")
-        embeddings=model.encode(
-            col_list,
-            convert_to_numpy=True,
-            show_progress_bar=True
-        )
+    print("Embedding the columns...\n")
 
-        emb_cols.append(col+'_emb')
-        df[col+'_emb']=list(embeddings)
+    for col_spec in text_cols:
+        # Case 1: Single column
+        if isinstance(col_spec, str):
+            col_list = df[col_spec].tolist()
+            embeddings = model.encode(
+                col_list,
+                convert_to_numpy=True,
+                show_progress_bar=True
+            )
+            emb_col_name = col_spec + '_emb'
+            df[emb_col_name] = list(embeddings)
+            emb_cols.append(emb_col_name)
+        
+        # Case 2: Two columns to average (2:3 ratio)
+        elif isinstance(col_spec, list) and len(col_spec) == 2:
+            col1, col2 = col_spec
+            
+            # Embed first column
+            col1_list = df[col1].tolist()
+            embeddings1 = model.encode(
+                col1_list,
+                convert_to_numpy=True,
+                show_progress_bar=True
+            )
+            
+            # Embed second column
+            col2_list = df[col2].tolist()
+            embeddings2 = model.encode(
+                col2_list,
+                convert_to_numpy=True,
+                show_progress_bar=True
+            )
+            
+            # Average with 3:2 ratio (60% first, 40% second)
+            averaged_embeddings = (3 * embeddings1 + 2 * embeddings2) / 5
+            
+            emb_col_name = f"{col1}_{col2}_emb"
+            df[emb_col_name] = list(averaged_embeddings)
+            emb_cols.append(emb_col_name)
+        
+        else:
+            raise ValueError(f"Invalid column specification: {col_spec}")
+
     return df, emb_cols
 
 

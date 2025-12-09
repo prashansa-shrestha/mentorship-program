@@ -239,3 +239,40 @@ def get_similarity_matrix(cosine_similarity_matrix:np.ndarray, mbti_matrix:np.nd
     return similarity_matrix
 
 
+
+def build_similarity_matrices(mentees_feature_matrices: dict,
+                              mentors_feature_matrices: dict) -> dict:
+    """
+    Computes cosine similarity matrices for every combination of
+    mentee-area matrix and mentor-area matrix.
+
+    Parameters
+    ----------
+    mentees_feature_matrices : dict
+        A dictionary where each value is a matrix of shape (n_mentees, d_k)
+        for some feature area.
+
+    mentors_feature_matrices : dict
+        A dictionary where each value is a matrix of shape (n_mentors, d_k)
+        for some feature area.
+
+    Returns
+    -------
+    similarity_matrices : dict
+        Keys are strings "{mentee_area}_to_{mentor_area}".
+        Values are similarity matrices with shape (n_mentees, n_mentors).
+    """
+
+    similarity_matrices = {}
+
+    for mentee_area, mentee_matrix in mentees_feature_matrices.items():
+        for mentor_area, mentor_matrix in mentors_feature_matrices.items():
+
+            # Compute cosine similarity
+            similarity = cosine_similarity_matrix(mentee_matrix, mentor_matrix)
+
+            # Store using descriptive key
+            key = f"Mentor_{mentee_area}_to_Mentee_{mentor_area}"
+            similarity_matrices[key] = similarity
+
+    return similarity_matrices

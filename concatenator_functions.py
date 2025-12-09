@@ -26,7 +26,7 @@ def block_to_matrix(df,col:str):
     return matrix
 
 
-def build_emb_matrices(df:pd.DataFrame,emb_cols:list[str]):
+def build_emb_matrices(df:pd.DataFrame,emb_cols:list[str])->np.ndarray:
     """
     For each column header in emb_cols, converts the column data into embedding
     Converts embedding columns in a DataFrame into stacked 2D numpy matrices
@@ -46,10 +46,12 @@ def build_emb_matrices(df:pd.DataFrame,emb_cols:list[str]):
             an embedding vector
     
     """
+    matrices=[]
     for col in emb_cols:
         key=col.removesuffix('_emb')+'_matrix'
         matrix=block_to_matrix(df, col)
-    return matrix
+        matrices.append(matrix)
+    return np.hstack(matrices)
 
 
 def build_numeric_matrices(df, numeric_cols):
@@ -111,13 +113,18 @@ def concatenate_matrices(matrix_list: list):
 
 def build_emb_dict(df:pd.DataFrame, embedded_col_headers: list[list[str]])->dict:
     """
-    Generates the embeddings for each list element in embedded_col_headers
+    Generates the embeddings for each areas
 
     Returns: 
         area_embedding_matrices: dict
             Key (str): area_i (eg. area_1, area_2)
             Value (np.ndarray): embedding matrix for the paricular area
 
+    Parameters:
+        df: pd.Dataframe
+            Dataframe containing the columns to be embedded
+        embedded_col_headers: list[list[str]]
+            List where each element is an list containing areas to be embedded
     """
     area_embedding_matrices={}
     for i,col_list in enumerate(embedded_col_headers):  

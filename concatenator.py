@@ -56,41 +56,29 @@ if (len(mentors_embedded_col_headers)!=len(mentees_embedded_col_headers)):
 
 #all the embedded columns represented as key value pairs in dictionary
 
+#constructs dictionary with each feature of mentors
+mentors_feature_matrices_dict=build_emb_dict(mentors_df, mentors_embedded_col_headers)
 
-mentors_area_embedding_matrices_dict=build_emb_dict(mentors_df, mentors_embedded_col_headers)
-
-mentees_area_embedding_matrices_dict=build_emb_dict(mentees_df, mentees_embedded_col_headers)
+#constructs dictionary with each feature of mentees
+mentees_feature_matrices_dict=build_emb_dict(mentees_df, mentees_embedded_col_headers)
 
 
 #all the embedded columns represented as a single 2D numpy array
-mentors_concatenated_embedding_matrices = concatenate_matrices_from_dict(
-    mentors_area_embedding_matrices_dict
-)
-mentees_concatenated_embedding_matrices = concatenate_matrices_from_dict(
-    mentees_area_embedding_matrices_dict
-)
+# mentors_concatenated_embedding_matrices = concatenate_matrices_from_dict(
+#     mentors_area_embedding_matrices_dict
+# )
+# mentees_concatenated_embedding_matrices = concatenate_matrices_from_dict(
+#     mentees_area_embedding_matrices_dict
+# )
 
 
+# #list of all features
+# mentors_matrix_list = [
+#     mentors_concatenated_embedding_matrices,
+#     mentors_one_hot_matrix
+# ]
 
-
-#list of all features
-mentors_matrix_list = [
-    mentors_concatenated_embedding_matrices,
-    mentors_one_hot_matrix
-]
-
-mentees_matrix_list = [
-    mentees_concatenated_embedding_matrices,
-    mentees_one_hot_matrix
-]
-
-#dict representing all features
-feature_matrix = {
-    "mentors":concatenate_matrices(mentors_matrix_list),
-    "mentees":concatenate_matrices(mentees_matrix_list)
-}
-
-
-feature_matrix={
-    "mentors_area1":concatenate_matrices()
-}
+# mentees_matrix_list = [
+#     mentees_concatenated_embedding_matrices,
+#     mentees_one_hot_matrix
+# ]
