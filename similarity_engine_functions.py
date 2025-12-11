@@ -209,7 +209,7 @@ def calculate_mbti_matrices():
     return mbti_matrix,has_mbti_mask
 
 
-def get_similarity_matrix(cosine_similarity_matrix:np.ndarray, mbti_matrix:np.ndarray, has_mbti_mask:np.ndarray,mbti_weight=0.1):
+def get_total_similarity_matrix(cosine_similarity_matrix:np.ndarray, mbti_matrix:np.ndarray, has_mbti_mask:np.ndarray,mbti_weight=0.1):
     """
     Calculates the similarity score between each mentor and mentee
     Considers both cosine similarity & MBTI similarity
@@ -240,7 +240,7 @@ def get_similarity_matrix(cosine_similarity_matrix:np.ndarray, mbti_matrix:np.nd
 
 
 
-def build_similarity_matrices(mentees_feature_matrices: dict,
+def build_cosine_similarity_matrices(mentees_feature_matrices: dict,
                               mentors_feature_matrices: dict) -> dict:
     """
     Computes cosine similarity matrices for every combination of
@@ -263,7 +263,7 @@ def build_similarity_matrices(mentees_feature_matrices: dict,
         Values are similarity matrices with shape (n_mentees, n_mentors).
     """
 
-    similarity_matrices = {}
+    cosine_similarity_matrices = {}
 
     for mentee_area, mentee_matrix in mentees_feature_matrices.items():
         for mentor_area, mentor_matrix in mentors_feature_matrices.items():
@@ -273,6 +273,46 @@ def build_similarity_matrices(mentees_feature_matrices: dict,
 
             # Store using descriptive key
             key = f"Mentor_{mentee_area}_to_Mentee_{mentor_area}"
-            similarity_matrices[key] = similarity
+            cosine_similarity_matrices[key] = similarity
 
+    return cosine_similarity_matrices
+
+
+def calculate_total_similarity_matrices(cosine_similarity_matrices: dict[str,np.ndarray], 
+                                        mbti_matrix: np.ndarray, 
+                                        has_mbti_mask: np.ndarray, 
+                                        mbti_weight: float):
+    """
+    Calculates the total similarity (goals+personality type for each mentor/mentee pair)
+
+    Returns: 
+        similairty_matrices: dict
+            has 9 entries
+            key(str): specifies the area index of mentee and mentor
+            value(np.ndarray): specifies the total_similarity score between each mentee and mentor
+
+    Parameters:
+        cosine_similarity_matrices: dict
+            has 9 entries
+            key(str): specifies the area index of mentee and mentor
+            value(np.ndarray): specifies the cosine similarity score between each mentee and mentor
+        mbti_matrix: np.ndarray
+            2D matrix specifying the compatibilty between each mentor and mentee pair
+        has_mbti_mask: np.ndarray
+            specifies whether the mentor mentee pair have MBTI assigned or not
+        mbti_weight: float
+            the weight given to mbti personality types in matchmaking     
+    """
+    similarity_matrices={}
+    
+    for key_area,cosine_similarity_matrix in cosine_similarity_matrices.items():
+        # Store using descriptive key
+        similarity_matrices[key_area]=get_total_similarity_matrix(
+            cosine_similarity_matrix,
+            mbti_matrix,
+            has_mbti_mask,
+            mbti_weight
+            )
+        
     return similarity_matrices
+
