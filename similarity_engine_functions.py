@@ -272,7 +272,7 @@ def build_cosine_similarity_matrices(mentees_feature_matrices: dict,
             similarity = cosine_similarity_matrix(mentee_matrix, mentor_matrix)
 
             # Store using descriptive key
-            key = f"Mentor_{mentee_area}_to_Mentee_{mentor_area}"
+            key = f"Mentee_{mentee_area}_to_Mentor_{mentor_area}"
             cosine_similarity_matrices[key] = similarity
 
     return cosine_similarity_matrices

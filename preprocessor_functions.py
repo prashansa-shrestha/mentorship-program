@@ -84,7 +84,7 @@ def normalize_string(df):
                 )
 
     #lowercasing dataset
-    df.apply(make_lowercase)
+    df=df.apply(make_lowercase)
 
     #convereted all empty strings into nan
     df=df.replace(r'^\s*$',np.nan,regex=True)
@@ -129,7 +129,7 @@ def one_hot_encode(df,col: list):
     """
     
     #one-hot-encoding the faculties
-    ohe_df=pd.get_dummies(df, columns=col)
+    ohe_df=pd.get_dummies(df, columns=col,dtype=int)
     
     before=set(df.columns)
     after=set(ohe_df.columns)

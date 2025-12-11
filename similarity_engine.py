@@ -4,33 +4,27 @@ from concatenator import mentors_feature_matrices_dict,mentees_feature_matrices_
 mbti_weight=0.1
 
 #dictionary containing the cosine similarity between each mentee and mentor area
-similarity_matrices=build_similarity_matrices(
+#contains 9 embedding matrices
+cosine_similarity_matrices=build_cosine_similarity_matrices(
     mentees_feature_matrices_dict,
     mentors_feature_matrices_dict
 )
 
 
-
+# the mbti functions between matrices
 mbti_matrix, has_mbti_mask=calculate_mbti_matrices()
 
-
-similarity_matrix=get_similarity_matrix(cosine_similarity_matrix, mbti_matrix,has_mbti_mask, mbti_weight)
-
-
-
-from similarity_engine_functions import mentors_expertise_matrix, mentees_expertise_matrix, n_mentors, n_mentees
-
-#dimension: [mentor_popn, mentee_popn, expertise level]
-#           depth of cube, length of cube, breadth of cube
-mentor_expertise_3d=mentors_expertise_matrix[None,:,:]
-mentee_expertise_3d=mentees_expertise_matrix[:,None,:]
-
-expertise_difference=mentor_expertise_3d-mentee_expertise_3d
-
-expertise_difference_mask=np.isclose(expertise_difference,0.2)|np,isclose(expertise_difference,0.4)
-
-
-
+#dict where each value specifies the similarity between each area of mentor and mentee
+# dict has 9 elements
+# calculates the total similarity between each mentor and mentee pair based on 
+# interest areas and personality types
+similarity_matrices=calculate_total_similarity_matrices(
+    cosine_similarity_matrices, 
+    mbti_matrix, 
+    has_mbti_mask, 
+    mbti_weight
+    )
+    
 
 
 
