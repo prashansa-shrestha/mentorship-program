@@ -16,3 +16,5 @@ generating_dataset/
 *~
 *.bak
 *.tmp
+
+.env
