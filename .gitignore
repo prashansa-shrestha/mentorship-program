@@ -6,7 +6,6 @@ __pycache__/
 venv/
 
 #dataset
-*.xlsx
 *.pkl
 
 #synthetic dataset generator
