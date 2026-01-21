@@ -1,0 +1,1248 @@
+-e 
+===== ./similarity_engine.py =====
+
+from similarity_engine_functions import *
+from concatenator import mentors_feature_matrices_dict,mentees_feature_matrices_dict
+
+mbti_weight=0.1
+
+#dictionary containing the cosine similarity between each mentee and mentor area
+#contains 9 embedding matrices
+cosine_similarity_matrices=build_cosine_similarity_matrices(
+    mentees_feature_matrices_dict,
+    mentors_feature_matrices_dict
+)
+
+
+# the mbti functions between matrices
+mbti_matrix, has_mbti_mask=calculate_mbti_matrices()
+
+#dict where each value specifies the similarity between each area of mentor and mentee
+# dict has 9 elements
+# calculates the total similarity between each mentor and mentee pair based on 
+# interest areas and personality types
+similarity_matrices=calculate_total_similarity_matrices(
+    cosine_similarity_matrices, 
+    mbti_matrix, 
+    has_mbti_mask, 
+    mbti_weight
+    )
+    
+
+
+
+
+
+
+
+
+
+#-------ROUGH--------
+
+#dk if i'll use this function or not
+def get_top_mentors(similarity_matrix:np.ndarray):
+    """
+    Returns mentor indices sorted by similarity for each mentee
+    
+    Returns:
+        top_match(np.ndarray):
+            A 2D numpy array (n_mentees, m_mentors) 
+            where:
+                each row contains mentors indices sorted in descending order of similarity scores
+                Entry [i,0] is the best match for mentee i
+
+    Parameters:
+        similarity_matrix(np.ndarray):
+            A 2D numpy array where each row contains similarity scores between
+            a single mentee(rows), and all mentors(columns)
+    """
+    indices= similarity_matrix.argsort(axis=1)[:, ::-1]
+    scores= np.take_along_axis(similarity_matrix,indices,axis=1)
+    return indices,scores
+
+#implementing this to avoid mentor overload while generating sufficient mentor-mentee matches
+# also need to think about mentor overload, so i need to return 
+
+def capacity_constrained_matching(similarity_matrix:np.ndarray,
+                                  mentor_capacity: int,
+                                  mentee_capacity:int=3):
+    n_mentees,n_mentors=similarity_matrix.shape
+    
+    #mentee_idx: row index for every pair
+    #mentor_idx: column index for every pair
+    mentee_idx,mentor_idx=np.indices(n_mentees,n_mentors)
+    mentee_idx=mentee_idx.ravel()
+    mentor_idx=mentor_idx.ravel()
+    scores=similarity_index.ravel()-e 
+===== ./embedder_functions.py =====
+
+from sentence_transformers import SentenceTransformer
+import pandas as pd
+
+#column headers containing sentence text fields
+mentors_area1=[
+     'engineering_subdomain_1'
+     ]
+mentors_area2=[
+    'engineering_subdomain_2'
+    ]
+mentors_area3=[
+    'other_areas_of_experience'
+    ]
+
+mentors_areas=[mentors_area1,mentors_area2,mentors_area3]
+
+
+
+mentees_area1=['areas_of_expected_guidance_priority_1',
+       'career_aspirations']
+mentees_area2=['areas_of_expected_guidance_priority_2', 
+       'career_aspirations']
+mentees_area3=['areas_of_expected_guidance_priority_3',
+       'career_aspirations']
+
+
+mentees_areas=[mentees_area1,mentees_area2,mentees_area3]
+
+
+model=SentenceTransformer("all-MiniLM-L6-v2")
+
+def embed_text_cols(df: pd.DataFrame, text_cols: list)->tuple[pd.DataFrame,list[str]]:
+    """
+    Generates embeddings for all specified text columns and appends
+    them to the dataframe as new '{col}_emb' columns.
+
+    Parameters:
+        df: pandas.DataFrame
+            original dataframe which requires text embeddings
+        text_cols: list
+            list of column specifications. Each element can be:
+            - str: single column name to embed
+            - list of 2 strings: two columns to embed and average (2:3 ratio)
+    Returns:
+        df: pandas.DataFrame
+            dataframe with new embedding columns
+        emb_cols: list
+            list containing names of created embedding columns
+    """
+    emb_cols = []
+
+    print("Embedding the columns...\n")
+
+    for col_spec in text_cols:
+        # Case 1: Single column
+        if isinstance(col_spec, str):
+            col_list = df[col_spec].tolist()
+            embeddings = model.encode(
+                col_list,
+                convert_to_numpy=True,
+                show_progress_bar=True
+            )
+            emb_col_name = col_spec + '_emb'
+            df[emb_col_name] = list(embeddings)
+            emb_cols.append(emb_col_name)
+        
+        # Case 2: Two columns to average (2:3 ratio)
+        elif isinstance(col_spec, list) and len(col_spec) == 2:
+            col1, col2 = col_spec
+            
+            # Embed first column
+            col1_list = df[col1].tolist()
+            embeddings1 = model.encode(
+                col1_list,
+                convert_to_numpy=True,
+                show_progress_bar=True
+            )
+            
+            # Embed second column
+            col2_list = df[col2].tolist()
+            embeddings2 = model.encode(
+                col2_list,
+                convert_to_numpy=True,
+                show_progress_bar=True
+            )
+            
+            # Average with 3:2 ratio (60% first, 40% second)
+            averaged_embeddings = (3 * embeddings1 + 2 * embeddings2) / 5
+            
+            emb_col_name = f"{col1}_{col2}_emb"
+            df[emb_col_name] = list(averaged_embeddings)
+            emb_cols.append(emb_col_name)
+        
+        else:
+            raise ValueError(f"Invalid column specification: {col_spec}")
+
+    return df, emb_cols
+
+
+def embed_df(embedded_df:pd.DataFrame, areas: list[str])->tuple[pd.DataFrame, list[list[str]]]:
+    """
+    Embeds each interest area, and provides the information of column headers embedded
+
+    Returns:
+        embedded_df(pd.DataFrame):
+            DataFrame with embedded columns added
+        embedded_col_headers(list of lists): 
+            A list where each element is a list of embedded column names created for corresponding coluns in 'areas'
+
+    Parameters:
+        embedded_df(pd.DataFrame): 
+            Input dataframe containing columns to embed
+        areas(list[str]):
+            List of columns to embed
+    """
+    embedded_col_headers=[]
+    for category in areas:
+        embedded_df, new_cols=embed_text_cols(
+            embedded_df,category
+            )
+        embedded_col_headers.append(new_cols)
+    return embedded_df,embedded_col_headers
+-e 
+===== ./similarity_engine_functions.py =====
+
+import numpy as np
+import pandas as pd
+from preprocessor import mentors_mbti, mentees_mbti, n_mentors, n_mentees
+from concatenator import mentors_expertise_matrix, mentees_expertise_matrix
+
+mbti_types = [
+    "ENFJ",
+    "ENFP",
+    "ENTJ",
+    "ENTP",
+    "ESFJ",
+    "ESFP",
+    "ESTJ",
+    "ESTP",
+    "INFJ",
+    "INFP",
+    "INTJ",
+    "INTP",
+    "ISFJ",
+    "ISFP",
+    "ISTJ",
+    "ISTP",
+]
+
+
+def normalize(matrix: np.ndarray):
+    """
+    Normalizes the rows of the matrix passed
+
+    Parameters:
+        matrix(numpy.ndarray):
+            A 2D numpy array where each row represents a feature vector
+
+    Returns:
+        normalized_matrix(numpy.ndarray):
+            A row-normalized 2D numpy array
+    """
+    row_norms = np.linalg.norm(matrix, axis=1, keepdims=True)
+    row_norms[row_norms == 0] = 1
+    normalized_matrix = matrix / row_norms
+    return normalized_matrix
+
+
+def cosine_similarity_matrix(mentors: np.ndarray, mentees: np.ndarray):
+    """
+    Calculates similarity score between n mentees and m mentors
+
+    Parameters:
+        mentors(numpy.ndarray):
+            A 2D numpy array representing feature vectors of mentors
+        mentees(numpy.ndarray):
+            A 2D numpy array representing feature vectors of mentees
+
+
+    Returns:
+        similarity_matrix(numpy.ndarray):
+            A 2D numpy array, where each row represents the similarity scores of a mentee with all mentors
+
+    Example:
+        Output matrix format (rows=mentees(m), columns=mentors(M))
+    [
+       [sim(m0,M0),sim(m0,M1),sim(m0,M2),..]
+       [sim(m1,M0),sim(m1,M1),sim(m1,M2),..]
+        ...
+    ]
+    """
+    mentor_normalized = normalize(mentors)
+    mentee_normalized = normalize(mentees)
+
+    cosine_similarity_matrix = mentee_normalized @ mentor_normalized.T
+
+    return cosine_similarity_matrix
+
+
+def get_mbti_compatiblity_data(file_path:str="datasets/mbti_compatibility.csv"): 
+    """
+    Returns MBTI compatibility data based from the csv in the provided path
+
+    Returns:
+        mbti_compatibility_data(numpy.ndarray):
+            2D arrary containing compatibility data
+        
+    Parameters:
+        file_path(str):
+            File where the compatibility data is stored
+    """
+    mbti_df = pd.read_csv(file_path, index_col=0)
+    mbti_compatibility_data = mbti_df.to_numpy()
+    return mbti_compatibility_data
+
+def get_mbti_indices_dict():
+    """
+    Returns a dictionary providing indices to MBTI types
+
+    Returns:
+        mbti_dict(dict):
+            Dictionary in the form:
+                {
+                    "type1":0
+                    "type2":1
+                    ...
+                }
+    """
+    mbti_dict={mbti: i for i, mbti in enumerate(mbti_types)}
+    return mbti_dict
+
+
+def initialize_zero_matrix(rows:int, cols:int):
+    """
+    Initializes a zero matrix based on the provided dimensions (r,c)
+
+    Returns:
+        zero_matrix(numpy.ndarray):
+            A 2D zero matrix of provided dimensions
+
+    Paramteters:
+        rows(int):
+            Number of rows in matrix(mentees)
+        
+        cols(int):
+            Number of columns in matrix(mentees)
+    """
+    zero_matrix = np.zeroes((rows, cols))
+    return zero_matrix
+
+
+def initialize_masking_matrix(rows:int, cols:int):
+    """
+    Initializes a zero matrix based on the provided dimensions (r,c)
+
+    Returns:
+        mask_matrix(numpy.ndarray):
+            A 2D matrix of provided dimensions with all entires False
+
+    Paramteters:
+        rows(int):
+            Number of rows in matrix(mentees)
+        
+        cols(int):
+            Number of columns in matrix(mentees)
+    """
+    mask_matrix = np.zeroes((rows, cols), dtype=bool)
+    return mask_matrix
+
+
+def process_each_pair(type1:str,type2:str):
+    """
+    Calculates compatibility between two provided MBTI personality types 
+
+    Returns:
+        compatibility(float):
+            Given MBTI types' compatibility score
+
+    Parameters:
+        personality_idx1(str):
+            Personality type of mentee
+
+        personality_idx2(str):
+            Personality type of mentor
+    """
+    mbti_index=get_mbti_indices_dict()
+    mbti_compatibility=get_mbti_compatiblity_data()
+
+    # assign indices based on the MBTI type
+    personality_idx1 = mbti_index[type1]
+    personality_idx2 = mbti_index[type2]
+
+    compatibility= mbti_compatibility[personality_idx1, personality_idx2]
+
+    return compatibility
+
+
+def calculate_mbti_matrices():
+    """
+    Computes the MBTI compatibility matrix, and the masking for each mentor and mentee pair
+
+    Returns:
+        mbti_matrix(np.ndarray):
+            A 2D matrix containing MBTI compatibility values for each mentor and mentee pairs
+
+        has_mbti_mask(np.ndarray):
+            A 2D matrix denoting the existence of MBTI compatibility values for each mentor and mentee pair
+
+    Parameters:
+        no parameters :P
+    """
+    mbti_matrix = initialize_zero_matrix(n_mentees, n_mentors)
+    has_mbti_mask =initialize_masking_matrix(n_mentees, n_mentors)
+
+
+    if mentors_mbti is not None and mentees_mbti is not None:
+        for i, mentee_type in enumerate(mentees_mbti):
+            # i: mentee index
+            # mentee_type: MBTI personality type of mentee
+
+            for j, mentor_type in enumerate(mentors_mbti):
+                # j: mentor index
+                #mentor_type: MBTI personality type of mentor
+
+                # edit the value of compatibility matrix of the specific mentor-mentee pair
+                mbti_matrix[i, j] = process_each_pair(mentee_type,mentor_type)
+
+                #edit the value of masking matrix of the specific mentor-mentee pair
+                has_mbti_mask[i, j] = True
+            print(f'Mentee {i} done')
+        
+        print(f'All mentees MBTI compatibility generated')
+    
+    return mbti_matrix,has_mbti_mask
+
+
+def get_total_similarity_matrix(cosine_similarity_matrix:np.ndarray, mbti_matrix:np.ndarray, has_mbti_mask:np.ndarray,mbti_weight=0.1):
+    """
+    Calculates the similarity score between each mentor and mentee
+    Considers both cosine similarity & MBTI similarity
+
+    Returns:
+        similarity_matrix(np.ndarray):
+            A 2D matrix containing compatibility values for each mentor and mentee pairs
+
+    Parameters:
+        cosine_similarity_matrix(np.ndarray):
+            A 2D numpy array, where each row represents the similarity scores of a mentee with all mentors
+
+        mbti_matrix(np.ndarray):
+            A 2D matrix containing MBTI compatibility values for each mentor and mentee pairs
+
+        has_mbti_mask(np.ndarray):
+            A 2D matrix denoting the existence of MBTI compatibility values for each mentor and mentee pair
+
+    """
+    similarity_matrix=cosine_similarity_matrix.copy()
+
+    similarity_matrix[has_mbti_mask]=(
+        (1-mbti_weight)* cosine_similarity_matrix[has_mbti_mask]+
+        mbti_weight*mbti_matrix[has_mbti_mask]
+    )
+
+    return similarity_matrix
+
+
+
+def build_cosine_similarity_matrices(mentees_feature_matrices: dict,
+                              mentors_feature_matrices: dict) -> dict:
+    """
+    Computes cosine similarity matrices for every combination of
+    mentee-area matrix and mentor-area matrix.
+
+    Parameters
+    ----------
+    mentees_feature_matrices : dict
+        A dictionary where each value is a matrix of shape (n_mentees, d_k)
+        for some feature area.
+
+    mentors_feature_matrices : dict
+        A dictionary where each value is a matrix of shape (n_mentors, d_k)
+        for some feature area.
+
+    Returns
+    -------
+    similarity_matrices : dict
+        Keys are strings "{mentee_area}_to_{mentor_area}".
+        Values are similarity matrices with shape (n_mentees, n_mentors).
+    """
+
+    cosine_similarity_matrices = {}
+
+    for mentee_area, mentee_matrix in mentees_feature_matrices.items():
+        for mentor_area, mentor_matrix in mentors_feature_matrices.items():
+
+            # Compute cosine similarity
+            similarity = cosine_similarity_matrix(mentee_matrix, mentor_matrix)
+
+            # Store using descriptive key
+            key = f"Mentee_{mentee_area}_to_Mentor_{mentor_area}"
+            cosine_similarity_matrices[key] = similarity
+
+    return cosine_similarity_matrices
+
+
+def calculate_total_similarity_matrices(cosine_similarity_matrices: dict[str,np.ndarray], 
+                                        mbti_matrix: np.ndarray, 
+                                        has_mbti_mask: np.ndarray, 
+                                        mbti_weight: float):
+    """
+    Calculates the total similarity (goals+personality type for each mentor/mentee pair)
+
+    Returns: 
+        similairty_matrices: dict
+            has 9 entries
+            key(str): specifies the area index of mentee and mentor
+            value(np.ndarray): specifies the total_similarity score between each mentee and mentor
+
+    Parameters:
+        cosine_similarity_matrices: dict
+            has 9 entries
+            key(str): specifies the area index of mentee and mentor
+            value(np.ndarray): specifies the cosine similarity score between each mentee and mentor
+        mbti_matrix: np.ndarray
+            2D matrix specifying the compatibilty between each mentor and mentee pair
+        has_mbti_mask: np.ndarray
+            specifies whether the mentor mentee pair have MBTI assigned or not
+        mbti_weight: float
+            the weight given to mbti personality types in matchmaking     
+    """
+    similarity_matrices={}
+    
+    for key_area,cosine_similarity_matrix in cosine_similarity_matrices.items():
+        # Store using descriptive key
+        similarity_matrices[key_area]=get_total_similarity_matrix(
+            cosine_similarity_matrix,
+            mbti_matrix,
+            has_mbti_mask,
+            mbti_weight
+            )
+        
+    return similarity_matrices
+
+-e 
+===== ./all_code.txt =====
+
+-e 
+===== ./expertise_matcher.py =====
+
+
+
+from similarity_engine_functions import mentors_expertise_matrix, mentees_expertise_matrix, n_mentors, n_mentees
+from expertise_matcher_functions import *
+
+expertise_differences,expertise_difference_mask=calculate_expertise_differences(
+    mentors_expertise_matrix,
+    mentees_expertise_matrix
+    )
+
+-e 
+===== ./concatenator_functions.py =====
+
+import numpy as np
+import pandas as pd
+
+#dataframes containing embeddings
+mentors_df=pd.read_pickle("mentors_with_embeddings.pkl")
+mentees_df=pd.read_pickle("mentees_with_embeddings.pkl")
+
+def block_to_matrix(df,col:str):
+    """
+    Converts a DataFrame column of embedding vectors into a 2D numpy array
+    where each row represents an entry
+
+    Parameters: 
+        df: pandas DataFrame
+            the dataframe containing the embedding columns
+        col: str
+            name of the column whose elements are embedding vectors
+    
+    Returns:
+        matrix: 2D np array
+            (n,d) matrix containing d-dimension embeddings of n people
+    
+    """
+    oned_nparray=df[col].to_numpy()
+    matrix=np.stack(oned_nparray)
+    return matrix
+
+
+def build_emb_matrices(df:pd.DataFrame,emb_cols:list[str])->np.ndarray:
+    """
+    For each column header in emb_cols, converts the column data into embedding
+    Converts embedding columns in a DataFrame into stacked 2D numpy matrices
+    If the dimension is d, then the resulting numpy array has d columns
+
+        Returns:
+        matrix: np.ndarray
+            2D numpt array of shape (n,d)
+                n= number of rows in dataframe
+                d= embedding dimension of column
+
+    Parameters:
+        df: pandas DataFrame
+            The dataframe containing embedding columns
+        emb_cols: list
+            List of column names where each columns contains
+            an embedding vector
+    
+    """
+    matrices=[]
+    for col in emb_cols:
+        key=col.removesuffix('_emb')+'_matrix'
+        matrix=block_to_matrix(df, col)
+        matrices.append(matrix)
+    return np.hstack(matrices)
+
+
+def build_numeric_matrices(df, numeric_cols):
+    """
+    Convert all numeric columns into a single 2D numpy array
+
+    Returns:
+        matrix_numeric: numpy.ndarray
+            contains all data of numeric columns in dataframe df
+            -each column represents the numeric_cols in the provided df
+            -each row represents the row in df
+        
+    Parameters:
+        df: pandas DataFrame
+            the dataframe containing the numeric rows that are to be converted to a matrix
+        numeric_cols: list
+            contains the column names that stores numeric values in the dataframe df
+        
+    """
+    matrix_numeric= df[numeric_cols].to_numpy(dtype=float)
+    return matrix_numeric
+
+
+def concatenate_matrices_from_dict(matrices_dict:dict):
+    """
+    Concatenates all the matrices stored as values in a dictionary into one 2D np array
+
+    Returns:
+        concatenated_emb_matrix: numpy.ndarray
+            a 2D array representing by horizontally concatenating all matrices in a dictionary
+            Resulting shape (n,sum(dimension_of_features)), for n samples
+    
+    Parameters:
+        matrices_dict(dict): 
+            A dictionary where:
+                each entry represents a matrix of an embedded column
+                key(str): Name of the feature matrix in the format "{col_without_emb}_matrix"
+                value(numpy.ndarray): 2D numpy array of shape (n,d) representing d-dimensional embeddings for n samples
+    """
+    concatenated_emb_matrix = np.concatenate([matrix for matrix in matrices_dict.values()], axis=1)
+    return concatenated_emb_matrix
+
+
+def concatenate_matrices(matrix_list: list):
+    """
+    Concatenates multiple 2D numpy matrices column-wise (axis=1)
+
+    Returns:
+        concatenated_matrix: numpy.ndarray
+            a 2D array formed by horizontal concatenation of all matrices
+            Resulting shape: n_rows x sum(dimension_of_features)
+    Parameters:
+        matrix_list: list
+            list where each element is a 2D numpy array representing features
+    """
+    concatenated_matrix = np.concatenate([matrix for matrix in matrix_list], axis=1)
+    return concatenated_matrix
+
+
+def build_emb_dict(df:pd.DataFrame, embedded_col_headers: list[list[str]])->dict:
+    """
+    Generates the embeddings for each areas
+
+    Returns: 
+        area_embedding_matrices: dict
+            Key (str): area_i (eg. area_1, area_2)
+            Value (np.ndarray): embedding matrix for the paricular area
+
+    Parameters:
+        df: pd.Dataframe
+            Dataframe containing the columns to be embedded
+        embedded_col_headers: list[list[str]]
+            List where each element is an list containing areas to be embedded
+    """
+    area_embedding_matrices={}
+    for i,col_list in enumerate(embedded_col_headers):  
+        value=build_emb_matrices(df,col_list)
+        key=f"area{i+1}"
+        area_embedding_matrices[key]=value
+    return area_embedding_matrices-e 
+===== ./expertise_matcher_functions.py =====
+
+from typing import Tuple, Dict
+import pandas as pd
+import numpy as np
+
+def extract_expertise_column(expertise_matrix: np.ndarray, area: int) -> np.ndarray:
+    """
+    Extract a specific expertise area column from the matrix.
+    
+    Parameters:
+    -----------
+    expertise_matrix : np.ndarray
+        Shape (n, 3) - expertise matrix
+    area : int
+        Area number (0,1, or 2)
+    
+    Returns:
+    --------
+    np.ndarray
+        Column vector of shape (n,)
+    """
+    return expertise_matrix[:, area]
+
+
+def compute_difference_matrix(mentee_col: np.ndarray, mentor_col: np.ndarray) -> np.ndarray:
+    """
+    Compute pairwise differences between mentor and mentee expertise levels.
+    
+    Parameters:
+    -----------
+    mentee_col : np.ndarray
+        Shape (n,) - mentee expertise values
+    mentor_col : np.ndarray
+        Shape (m,) - mentor expertise values
+    
+    Returns:
+    --------
+    np.ndarray
+        Shape (n, m) - matrix where element [i,j] = mentor[j] - mentee[i]
+    """
+    return mentor_col[None, :] - mentee_col[:, None]
+
+
+def create_expertise_mask(difference_matrix: np.ndarray, 
+                          target_differences: Tuple[float, ...] = (0.2, 0.4)) -> np.ndarray:
+    """
+    Create boolean mask for differences close to target values.
+    
+    Parameters:
+    -----------
+    difference_matrix : np.ndarray
+        Shape (n, m) - matrix of expertise differences
+    target_differences : tuple of float
+        Target difference values to match (default: 0.2 and 0.4)
+    
+    Returns:
+    --------
+    np.ndarray
+        Shape (n, m) - boolean matrix, True where difference matches any target
+    """
+    mask = np.zeros_like(difference_matrix, dtype=bool)
+    for target in target_differences:
+        mask |= np.isclose(difference_matrix, target)
+    return mask
+
+
+def generate_area_combination_key(mentee_area: int, mentor_area: int) -> str:
+    """
+    Generate standardized key for mentee-mentor area combination.
+    
+    Parameters:
+    -----------
+    mentee_area : int
+        Mentee expertise area (1, 2, or 3)
+    mentor_area : int
+        Mentor expertise area (1, 2, or 3)
+    
+    Returns:
+    --------
+    str
+        Key in format "mentee_area{X}_to_mentor_area{Y}"
+    """
+    return f"mentee_area{mentee_area}_to_mentor_area{mentor_area}"
+
+
+def calculate_expertise_differences(
+    mentors_expertise_matrix: np.ndarray,
+    mentees_expertise_matrix: np.ndarray
+) -> Tuple[Dict[str, np.ndarray], Dict[str, np.ndarray]]:    
+    """
+    Calculate expertise differences between mentees and mentors across all area combinations.
+    
+    Parameters:
+    -----------
+    mentees_expertise_matrix : np.ndarray
+        Shape (n, 3) - n mentees, 3 expertise areas
+    mentors_expertise_matrix : np.ndarray
+        Shape (m, 3) - m mentors, 3 expertise areas
+    
+    Returns:
+    --------
+    expertise_differences : dict
+        Dictionary with 9 keys, each containing an (n, m) matrix of differences
+    expertise_difference_mask : dict
+        Dictionary with 9 keys, each containing an (n, m) boolean matrix
+        True where differences are close to 0.2 or 0.4
+    """
+    expertise_differences = {}
+    expertise_difference_mask = {}
+    
+    for mentee_area in range(0, 3):
+        for mentor_area in range(0, 3):
+            # Generate key for this combination
+            key = generate_area_combination_key(mentee_area, mentor_area)
+            
+            # Extract columns for this area combination
+            mentee_col = extract_expertise_column(mentees_expertise_matrix, mentee_area)
+            mentor_col = extract_expertise_column(mentors_expertise_matrix, mentor_area)
+            
+            # Compute difference matrix
+            difference_matrix = compute_difference_matrix(mentee_col, mentor_col)
+            expertise_differences[key] = difference_matrix
+            
+            # Create mask for target differences
+            mask = create_expertise_mask(difference_matrix)
+            expertise_difference_mask[key] = mask
+    
+    return expertise_differences, expertise_difference_mask-e 
+===== ./match_generator.py =====
+
+from similarity_engine import similarity_matrices
+from expertise_matcher import expertise_difference_mask
+
+the expertise difference mask is a dictionary where key values are the 
+mapping of mentee expertise areas to mentor expertise areas
+as:
+mentee_area_0_to_mentor_area_0: //2D arrary containing boolean values if their expertise level are matched or not
+mentee_area_0_to_mentor_area_1
+mentee_area_0_to_mentor_area_2
+
+
+mentee_area_1_to_mentor_area_0
+mentee_area_1_to_mentor_area_1
+mentee_area_1_to_mentor_area_2
+
+
+
+mentee_area_2_to_mentor_area_0
+mentee_area_2_to_mentor_area_1
+mentee_area_2_to_mentor_area_2
+
+similarity_matrices: a dictionary where key values are the 
+mapping of mentee interest areas to mentor interest area areas
+higher the value,higher the mentor has the same experience the mentee is seeking to imprve
+as:
+mentee_area_0_to_mentor_area_0: //2D arrary containing float values determining the experience/interest simlairty of mentors and mentees
+mentee_area_0_to_mentor_area_1
+mentee_area_0_to_mentor_area_2
+
+
+mentee_area_1_to_mentor_area_0
+mentee_area_1_to_mentor_area_1
+mentee_area_1_to_mentor_area_2
+
+
+
+mentee_area_2_to_mentor_area_0
+mentee_area_2_to_mentor_area_1
+mentee_area_2_to_mentor_area_2
+
+
+i want the expertise_difference_mask too be used to create a similar dict to give score to each pair
+for their compatibility. suggest me some ways in which i can implement this so that i can generate meentor mentee matches based on 
+interest areas and experience level. i want all mentees to have at least one mentor, and all mentees to have at least one mentee_area_0_to_mentor_area_0
+ideally each mentor/mentee should be paired with 1(min)-3(max) mentee/mentors respectively-e 
+===== ./preprocessor_functions.py =====
+
+import pandas as pd
+import numpy as np
+from typing import List, Tuple, Union, Optional
+
+# this list contain the columns that contain rating of expertise from 1-5
+
+MENTORS_NUMERIC_COLS = [
+    "current_level_of_expertise_technical1",
+    "current_level_of_expertise_technical2",
+    "current_level_of_expertise_nontechnical",
+]
+
+MENTEES_NUMERIC_COLS = [
+    "current_expertise_1",
+    "current_expertise_2",
+    "current_expertise_3",
+]
+
+NUMERIC_COLS = MENTORS_NUMERIC_COLS + MENTEES_NUMERIC_COLS
+
+# this dictionary contains the columns that are to be one hot encoded for mentors and mentees
+ONE_HOT_ENCODING_COL = {"mentors": ["engineering_stream"], "mentees": ["faculty"]}
+
+MAX_VALUE_NUMERIC = 5
+MIN_VALUE_NUMERIC = 1
+
+def read_dataset(file_path: str):
+    """
+    Reads an Excel dataset from the specified file path into a pandas DataFrame.
+
+    Parameters
+    ----------
+    file_path : str
+        The full path to the Excel file (.xlsx or .xls).
+
+    Returns
+    -------
+    pd.DataFrame
+        The DataFrame containing the data from the Excel file.
+
+    Raises
+    ------
+    FileNotFoundError
+        If the specified `file_path` does not exist. The function prints an 
+        error message and exits the program.
+    """
+    try:
+        df = pd.read_excel(file_path)
+        return df
+    except FileNotFoundError as e:
+        print(f"Error: dataset.xlsx not found. Please check the file path. {e}")
+        exit()
+
+
+def make_lowercase(col: pd.Series) -> pd.Series:
+    """
+    Makes all the entries of columns in the dataframe lowercase if they are a string
+
+    Parameters:
+        col(pd.Series):
+            The column whose values are to be lowercased
+
+    Returns:
+        col_lowercase (pd.Series):
+            The processed column with strings lowercased
+
+    """
+    if col.dtype == "object":
+        col_lowercase = col.str.lower()
+        return col_lowercase
+    else:
+        return col
+
+
+def normalize_numeric(
+    df: pd.DataFrame,
+    cols: List[str] = NUMERIC_COLS,
+    upper_limit: int = MAX_VALUE_NUMERIC,
+    lower_limit: int = MIN_VALUE_NUMERIC,
+) -> pd.DataFrame:
+    """
+    Normalizes specific numeric columns in the dataset using Min-Max scaling.
+    In this project, this is used for ratings of their skill-sets by the mentors and mentees
+
+    Returns:
+        df(pd.DataFrame):
+            The dataframe with specified columns normalized between 0 and 1.
+    Args:
+        df (pd.DataFrame): The dataframe containing the data.
+        cols (List[str]): List of column names to be normalized.
+                          Defaults to the global NUMERIC_COLS list.
+        min_val (int): The minimum possible value of the rating (e.g., 1).
+        max_val (int): The maximum possible value of the rating (e.g., 5)."""
+    for col in cols:
+        if col in df.columns:
+            # Coerce errors turn non-numeric garbage into NaN
+            df[col] = pd.to_numeric(df[col], errors="coerce")
+            df[col] = (df[col] - lower_limit) / (upper_limit - lower_limit)
+    return df
+
+
+def normalize_string(df: pd.DataFrame) -> pd.DataFrame:
+    """Normalizes the dataframe's column headers and string values.
+
+    Operations:
+    1. Headers: Lowercase, strip whitespace, replace spaces with underscores,
+       remove special characters.
+    2. Values: Lowercase all string entries.
+    3. Empty Strings: Converts whitespace-only strings to NaN.
+
+    Args:
+        df (pd.DataFrame): The raw dataframe.
+
+    Returns:
+        pd.DataFrame: The cleaned and normalized dataframe.
+    """
+    # normalizing column headers
+    df.columns = (
+        df.columns.str.lower()
+        .str.strip()
+        .str.replace(" ", "_")
+        .str.replace(r"[^A-Za-z0-9_]", "", regex=True)
+    )
+
+    # Lowercase all object columns in the dataset
+    df = df.apply(make_lowercase)
+
+    # Convert all empty or whitespace-only strings into NaN
+    df = df.replace(r"^\s*$", np.nan, regex=True)
+
+    return df
+
+
+def split_df_by_role(
+    df: pd.DataFrame, role_column: str = "role"
+) -> Tuple[pd.DataFrame, pd.DataFrame]:
+    """
+    Splits the dataframe into two separate dataframes based on the user role.
+
+    Args:
+        df (pd.DataFrame): The main dataframe containing mixed roles.
+        role_column (str): The column name identifying the user role. Defaults to 'role'.
+
+    Returns:
+        Tuple[pd.DataFrame, pd.DataFrame]: 
+            - mentors_df: Dataframe containing only mentors.
+            - mentees_df: Dataframe containing only mentees.
+    """# Ensure we handle NaN in the role column to avoid attribute errors
+    if role_column not in df.columns:
+        raise KeyError(f"Column '{role_column}' not found in dataframe.")
+    
+    mentors_df = df[df[role_column].str.lower() == "mentor"].copy()
+    mentees_df = df[df[role_column].str.lower() == "mentee"].copy()
+
+    return mentors_df, mentees_df
+
+
+def drop_empty_cols(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Drops columns where all values are NaN.
+
+    Args:
+        df (pd.DataFrame): The input dataframe.
+
+    Returns:
+        pd.DataFrame: Dataframe with empty columns removed.
+    """
+    return df.dropna(axis=1, how="all")
+
+
+def one_hot_encode(df: pd.DataFrame, col: List[str]) -> Tuple[List[str], pd.DataFrame]:
+    """
+    One-hot encodes the specified categorical columns using pandas get_dummies.
+
+    Args:
+        df (pd.DataFrame): Dataframe to encode.
+        col (List[str]): List of column names to perform one-hot encoding on.
+
+    Returns:
+        Tuple[List[str], pd.DataFrame]:
+            - ohe_cols: A list of the names of the newly created encoded columns.
+            - ohe_df: The dataframe with the new one-hot encoded columns included.
+    """
+
+    # one-hot-encoding the faculties
+    ohe_df = pd.get_dummies(df, columns=col, dtype=int)
+
+    before = set(df.columns)
+    after = set(ohe_df.columns)
+
+    ohe_cols = list(after - before)
+    #sort the columns alphabetically to ensure consistency
+    ohe_cols.sort()
+
+    return ohe_cols, ohe_df
+
+
+def print_df_col_names(df: pd.DataFrame) -> None:
+    """
+    Prints all column names in the provided dataframe.
+
+    Args:
+        df (pd.DataFrame): The dataframe whose columns will be printed.
+
+    Returns:
+        None
+    """
+    print(df.columns, "\n\n")
+    return
+
+
+def get_mbti_list(df: pd.DataFrame, col_header: str = 'mbti_personality_type') -> List[Optional[str]]:
+    """
+    Extracts MBTI personality types from a dataframe column as a list.
+    Converts NaN values into None for consistent downstream processing.
+
+    Args:
+        df (pd.DataFrame): Dataframe containing user data.
+        col_header (str): Name of the column containing the MBTI type. 
+                          Defaults to 'mbti_personality_type'.
+
+    Returns:
+        mbti_list(List[Optional[str]]): A list of MBTI types, where missing values are None.
+    """
+    if col_header not in df.columns:
+        raise KeyError(f"Column '{col_header}' not found in dataframe.")
+
+    mbti_series = df[col_header]
+
+    #replace NaN with None
+    mbti_series_cleaned = mbti_series.where(mbti_series.notna(), None)
+
+    #convert the series to a list
+    mbti_list = mbti_series_cleaned.tolist()
+    return mbti_list
+-e 
+===== ./concatenator.py =====
+
+from embedder import mentors_embedded_col_headers, mentees_embedded_col_headers
+from preprocessor import (
+    mentors_one_hot_cols,
+    mentees_one_hot_cols,
+    mentors_numeric_cols,
+    mentees_numeric_cols,
+)
+from concatenator_functions import *
+
+#Key assumption:
+
+# ----ONE HOT COLS---
+if (len(mentors_one_hot_cols)!=len(mentees_one_hot_cols)):
+    raise ValueError(
+        f"One hot columns dimension mismatch:\n"
+        "Mentors have {len(mentors_one_hot_cols)} one hot columns"
+        "Mentees have {len(mentees_one_hot_cols)} one hot columns"
+    )
+
+#one hot columns represented as a single 2D numpy array
+mentors_one_hot_matrix = build_numeric_matrices(mentors_df, mentors_one_hot_cols)
+mentees_one_hot_matrix = build_numeric_matrices(mentees_df, mentees_one_hot_cols)
+
+
+
+# ----EXPERTISE NUMERIC COLS----
+if (len(mentors_numeric_cols)!=len(mentees_numeric_cols)):
+    raise ValueError(
+        f"Numeric columns dimension mismatch:\n"
+        "Mentors have {len(mentors_numeric_cols)} numeric columns"
+        "Mentees have {len(mentees_numeric_cols)} numeric columns"
+    )
+
+
+#all the numeric columns represented as a single 2D numpy array
+mentors_expertise_matrix = build_numeric_matrices(mentors_df, mentors_numeric_cols)
+mentees_expertise_matrix = build_numeric_matrices(mentees_df, mentees_numeric_cols)
+
+
+if ((mentors_expertise_matrix.shape[1])!=(mentees_expertise_matrix.shape[1])):
+    raise ValueError(
+        f"Numeric matrices dimension mismatch:\n"
+        "Mentors have {mentors_numeric_matrix.shape[1]} columns"
+        "Mentees have {mentees_numeric_matrix.shape[1]} columns"
+    )
+
+
+# ----EMBEDDING COLUMNS----
+
+if (len(mentors_embedded_col_headers)!=len(mentees_embedded_col_headers)):
+    raise ValueError(
+        f"Embedding dimension mismatch:\n"
+        "Mentors have {len(mentors_embedded_col_headers)} embedding columns\n"
+        "Mentees have {len(mentees_embedded_col_headers)} embedding columns"
+    )
+
+#all the embedded columns represented as key value pairs in dictionary
+
+#constructs dictionary with each feature of mentors
+mentors_feature_matrices_dict=build_emb_dict(mentors_df, mentors_embedded_col_headers)
+
+#constructs dictionary with each feature of mentees
+mentees_feature_matrices_dict=build_emb_dict(mentees_df, mentees_embedded_col_headers)
+
+
+#all the embedded columns represented as a single 2D numpy array
+# mentors_concatenated_embedding_matrices = concatenate_matrices_from_dict(
+#     mentors_area_embedding_matrices_dict
+# )
+# mentees_concatenated_embedding_matrices = concatenate_matrices_from_dict(
+#     mentees_area_embedding_matrices_dict
+# )
+
+
+# #list of all features
+# mentors_matrix_list = [
+#     mentors_concatenated_embedding_matrices,
+#     mentors_one_hot_matrix
+# ]
+
+# mentees_matrix_list = [
+#     mentees_concatenated_embedding_matrices,
+#     mentees_one_hot_matrix
+# ]
+-e 
+===== ./preprocessor.py =====
+
+import pandas as pd 
+
+from preprocessor_functions import *
+
+# --- 1. Data Loading and Initial String Normalization ---
+
+
+#loading dataset
+df=read_dataset('dataset.xlsx')
+
+# Normalize all strings: column headers, values, and convert empty cells to NaN.
+df=normalize_string(df)
+
+
+# --- 2. Numerical Normalization ---
+
+
+# Normalize skill ratings (1-5) to a 0-1 range for the entire dataset.
+df=normalize_numeric(df)
+
+
+# --- 3. Data Splitting ---
+
+# Split the dataframe into two based on the user's role column.
+mentors_df,mentees_df=split_df_by_role(df,'role')
+
+#drop empty columns in mentor-mentee dataset
+mentors_df=drop_empty_cols(mentors_df)
+mentees_df=drop_empty_cols(mentees_df)
+
+#gets the number of mentors and mentees in the dataframe
+n_mentees=mentees_df.shape[0]
+n_mentors=mentors_df.shape[0]
+print(f"Dataset split: {n_mentors} Mentors and {n_mentees} Mentees.")
+
+# --- 4. Extracting MBTI Personality Types ---
+mentors_mbti=get_mbti_list(mentors_df)
+mentees_mbti=get_mbti_list(mentees_df)
+
+# Perform One-Hot Encoding (OHE) on categorical columns specific to each group.
+# Mentors: 'engineering_stream'
+# Mentees: 'faculty'
+mentors_one_hot_cols, mentors_df = one_hot_encode(
+    mentors_df,
+    ONE_HOT_ENCODING_COL['mentors']
+)
+mentees_one_hot_cols, mentees_df = one_hot_encode(
+    mentees_df,
+    ONE_HOT_ENCODING_COL['mentees']
+)-e 
+===== ./embedder.py =====
+
+from embedder_functions import *
+from preprocessor import mentors_df, mentees_df
+
+mentors_embedded_df=mentors_df.copy() #intializing dataframe to integrate embeddings
+mentees_embedded_df=mentees_df.copy()
+
+    
+mentors_embedded_df, mentors_embedded_col_headers= embed_df(
+    mentors_embedded_df, mentors_areas
+)
+
+    
+mentees_embedded_df, mentees_embedded_col_headers= embed_df(
+    mentees_embedded_df, mentees_areas
+)
+
+
+mentors_embedded_df.to_pickle("mentors_with_embeddings.pkl")
+mentees_embedded_df.to_pickle("mentees_with_embeddings.pkl")

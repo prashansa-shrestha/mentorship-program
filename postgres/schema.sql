@@ -692,11 +692,6 @@ BEGIN
         IF NEW.main_interest_level IS NOT NULL THEN filled_fields := filled_fields + 1; END IF;
         IF NEW.additional_interest IS NOT NULL THEN filled_fields := filled_fields + 1; END IF;
         IF NEW.future_aspirations IS NOT NULL THEN filled_fields := filled_fields + 1; END IF;
-        IF NEW.openness_score IS NOT NULL THEN filled_fields := filled_fields + 1; END IF;
-        IF NEW.conscientiousness_score IS NOT NULL THEN filled_fields := filled_fields + 1; END IF;
-        IF NEW.extraversion_score IS NOT NULL THEN filled_fields := filled_fields + 1; END IF;
-        IF NEW.agreeableness_score IS NOT NULL THEN filled_fields := filled_fields + 1; END IF;
-        IF NEW.neuroticism_score IS NOT NULL THEN filled_fields := filled_fields + 1; END IF;
         IF NEW.primary_motivation IS NOT NULL THEN filled_fields := filled_fields + 1; END IF;
         IF NEW.goal_approach IS NOT NULL THEN filled_fields := filled_fields + 1; END IF;
         IF NEW.communication_style IS NOT NULL THEN filled_fields := filled_fields + 1; END IF;
