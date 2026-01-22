@@ -32,35 +32,7 @@ The system is designed for the Hack-A-Week 2026 mentorship program and currently
 
 ***
 
-## Project Structure
 
-A typical repository layout:
-
-```text
-mentorship-program/
-├── claude/
-│   └── mentor_matching_system.py      # Matching system (Person A) [conversation_history:73]
-├── datasets/                          # Real data (future)
-├── postgres/                          # Database & data scripts (Person B & C)
-│   ├── docker-compose.yml             # PostgreSQL + pgvector container
-│   ├── schema_minimal.sql             # 5-table schema
-│   ├── init_db.py                     # Create tables & extensions
-│   ├── populate_db.py                 # Insert dummy mentors/mentees + embeddings
-│   ├── dummy_mentor_data.py           # Generate dummy mentor data (Person C)
-│   └── dummy_mentee_data.py           # Generate dummy mentee data (Person C)
-├── src/
-│   ├── preprocessor.py                # Data cleaning / feature prep
-│   ├── embedder.py                    # Embedding utilities
-│   ├── similarity_engine.py           # Similarity helpers
-│   ├── expertise_matcher.py           # Score based on skill gaps
-│   └── match_generator.py             # Match orchestration
-├── run_matching.py                    # CLI entrypoint to run matching
-├── SCHEMA_MINIMAL_DOCS.md             # Schema documentation
-└── README.md                          # This file
-```
-
-(Names may vary slightly; structure reflects the current project described so far.) 
-***
 
 ## Features
 
@@ -271,23 +243,6 @@ This end‑to‑end process turns form responses into ranked mentor assignments 
 
 ***
 
-## Development Workflow
-
-A typical development loop:
-
-1. **Update data generation** (Person C)  
-   - Modify dummy generators if Google Form changes.  
-   - Regenerate Excel and repopulate DB.
-
-2. **Update schema / DB utilities** (Person B)  
-   - Change schema if new fields are needed.  
-   - Re-run `init_db.py` and `populate_db.py`. 
-
-3. **Update matching logic** (Person A)  
-   - Adjust scoring functions and matching strategy.  
-   - Run `run_matching.py` to test new behavior. 
-   
-
 ***
 
 ## Testing
@@ -323,18 +278,7 @@ Planned improvements:
 - Add additional scoring factors:
   - Hobbies / MBTI‑like personality compatibility.
   - Learning/feedback style alignment from survey questions.
-- Build a simple UI or dashboard for:
-  - Inspecting matches.
-  - Overriding or manually adjusting pairings.
-  - Exporting final assignments.
 
 ***
-
-## Credits
-
-- **Hack-A-Week 2026 mentorship organizing team.**  
-- **Person A** – matching algorithm & system design.
-- **Person B** – database, schema, Docker, and population scripts.
-- **Person C** – data generation, embeddings, and documentation.
 
 ***
