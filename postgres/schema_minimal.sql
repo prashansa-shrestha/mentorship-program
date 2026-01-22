@@ -67,16 +67,16 @@ CREATE TABLE mentee_profiles (
 
     -- Interest information
     main_interest TEXT NOT NULL,
-    main_interest_level INTEGER NOT NULL CHECK (main_interest_level BETWEEN 1 AND 5),
+    current_expertise_level INTEGER NOT NULL CHECK (current_expertise_level BETWEEN 1 AND 5),
 
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE INDEX idx_mentee_user ON mentee_profiles(user_id);
-CREATE INDEX idx_mentee_interest ON mentee_profiles(main_interest, main_interest_level);
+CREATE INDEX idx_mentee_interest ON mentee_profiles(main_interest, current_expertise_level);
 
 COMMENT ON TABLE mentee_profiles IS 'Mentee-specific profile data with learning interests';
-COMMENT ON COLUMN mentee_profiles.main_interest_level IS '1=Novice, 2=Beginner, 3=Intermediate, 4=Advanced, 5=Expert';
+COMMENT ON COLUMN mentee_profiles.current_expertise_level IS '1=Novice, 2=Beginner, 3=Intermediate, 4=Advanced, 5=Expert';
 
 -- =====================================================
 -- TABLE 4: EMBEDDINGS
@@ -186,7 +186,7 @@ SELECT
     u.name,
     u.email,
     me.main_interest,
-    me.main_interest_level
+    me.current_expertise_level
 FROM mentee_profiles me
 JOIN users u ON me.user_id = u.user_id
 ORDER BY me.created_at DESC;
@@ -214,7 +214,7 @@ SELECT
     mentee_user.name as mentee_name,
     mentee_user.email as mentee_email,
     mep.main_interest as mentee_interest,
-    mep.main_interest_level as mentee_level
+    mep.current_expertise_level as mentee_level
 
 FROM matches m
 JOIN mentor_profiles mp ON m.mentor_id = mp.mentor_profile_id
