@@ -18,16 +18,16 @@ class MentorMatchingSystem:
     - Weighted combination (80% semantic + 20% expertise)
     """
 
-    def __init__(self):
-        """Initialize database connection."""
+    def __init__(self, db_connection_string: str):
+        """
+        Initialize database connection.
+
+        Args:
+            db_connection_string: PostgreSQL connection string
+                Format: "postgresql://user:password@host:port/database"
+        """
         try:
-            self.conn = psycopg2.connect(
-                dbname="mentor_db",
-                user="postgres",
-                password="postgres123",
-                host="localhost",
-                port=5432
-            )
+            self.conn = psycopg2.connect(db_connection_string)
             self.cursor = self.conn.cursor(cursor_factory=RealDictCursor)
             print("✓ Database connection established")
         except Exception as e:
@@ -378,8 +378,11 @@ class MentorMatchingSystem:
 # =====================================================
 
 if __name__ == "__main__":
+    # Connection string
+    DB_CONNECTION = "postgresql://postgres:password123@localhost:5432/mentor_db"
+
     # Initialize system
-    matcher = MentorMatchingSystem()
+    matcher = MentorMatchingSystem(DB_CONNECTION)
 
     # Test implemented functions (Day 1)
     print("\n=== Testing Day 1 Implementation ===")

@@ -1,10 +1,13 @@
-from your_matcher_file import MentorMatchingSystem
+from mentor_matching_system import MentorMatchingSystem
 
-matcher = MentorMatchingSystem(
-    "postgresql://user:password@localhost:5432/mentor_db"
-)
+DB_DSN = "postgresql://postgres:postgres123@127.0.0.1:5433/mentor_db"
 
-matching_round_id = matcher.execute_matching_round("January_2026_Cohort_1")
-print(f"Matching complete: {matching_round_id}")
+
+print("Using DB_DSN:", DB_DSN)
+
+matcher = MentorMatchingSystem(DB_DSN)
+
+num_matches = matcher.execute_matching(algorithm_name="Gale-Shapley")
+print(f"Matching complete: {num_matches} matches created")
 
 matcher.close()
