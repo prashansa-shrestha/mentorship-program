@@ -1,13 +1,14 @@
 """
-Dummy Mentee Data Generator - Mentees Only
+Dummy Mentee Data Generator - SQL Version
 Hack-A-Week 2026 Mentorship Program
-Generated: January 22, 2026
+Generated for Person C - Uses Person A's Schema
 """
 
 import random
 import numpy as np
-import pandas as pd
 from typing import List, Dict
+from datetime import datetime
+
 
 # =======================
 # CONFIGURATION
@@ -112,7 +113,7 @@ GUIDANCE_PREFERENCES = [
 ]
 
 FEEDBACK_STYLES = [
-    "Encouraging, highlighting strengths while addressing issues**",
+    "Encouraging, highlighting strengths while addressing issues",
     "Only on important points that matter most",
     "Detailed with guidance and regular check-ins"
 ]
@@ -135,6 +136,7 @@ COMMITMENT_STYLES = [
     "I commit fully at the start and adapt my approach as I go"
 ]
 
+
 # =======================
 # EMBEDDING GENERATOR
 # =======================
@@ -147,6 +149,7 @@ def generate_realistic_embedding(dim=384) -> List[float]:
         vec = vec / norm
     return vec.tolist()
 
+
 # =======================
 # MENTEE GENERATOR
 # =======================
@@ -158,7 +161,7 @@ def generate_campus_roll(existing_rolls: set) -> str:
     stream = random.choice(streams)
     dept_code = DEPT_CODES.get(stream, "BCT")
     batch = random.choice(BATCH_YEARS)
-    
+
     # Generate unique roll
     for _ in range(100):
         roll_num = random.randint(1, 150)
@@ -166,64 +169,65 @@ def generate_campus_roll(existing_rolls: set) -> str:
         if roll not in existing_rolls:
             existing_rolls.add(roll)
             return roll
-    
+
     # Fallback
     roll_num = len(existing_rolls) + 1
     return f"{batch}{dept_code}{roll_num:03d}"
 
+
 def generate_mentee(i: int, existing_rolls: set) -> Dict:
     """Generate realistic mentee matching your exact Google Form"""
-    
+
     first = random.choice(FIRST_NAMES)
     last = random.choice(LAST_NAMES)
-    
+
     # Section 1: Basic Information
     campus_roll = generate_campus_roll(existing_rolls)
-    
+
     # Q5: Hobby (70% have it)
     hobby = random.choice(HOBBIES) if random.random() < 0.7 else ""
-    
+
     # Section 2: Learning Goals
     # Q6: Main Interest
     main_interest = random.choice(MAIN_INTERESTS)
-    
+
     # Q7: Expertise level (mentees are 1-3, mostly 1-2)
     main_expertise_level = random.choices([1, 2, 3], weights=[0.5, 0.4, 0.1])[0]
-    
+
     # Q8-9: Additional interests (40% have them)
     has_additional = random.random() < 0.4
     additional_interest = random.choice(ADDITIONAL_INTERESTS) if has_additional else ""
     additional_level = random.randint(1, 2) if has_additional else None
-    
+
     # Q10: Future aspirations
     future_aspiration = random.choice(FUTURE_ASPIRATIONS)
-    
+
     # Section 3: Learning Preferences
     # Q11: Motivations (select up to 2)
     num_motivations = random.choices([1, 2], weights=[0.3, 0.7])[0]
     motivations = random.sample(MOTIVATIONS, num_motivations)
-    
+
     # Q12-16: Single choice questions
     guidance_pref = random.choice(GUIDANCE_PREFERENCES)
     feedback_style = random.choice(FEEDBACK_STYLES)
     discussion_style = random.choice(DISCUSSION_STYLES)
     disagreement_approach = random.choice(DISAGREEMENT_APPROACHES)
     commitment_style = random.choice(COMMITMENT_STYLES)
-    
+
     return {
         # Section 1
         "Name": f"{first} {last}",
         "Campus Roll Number": campus_roll,
         "Personal email address": f"{first.lower()}.{last.lower()}{i:02d}@student.edu.np",
         "Hobby (Optional)": hobby,
-        
+
         # Section 2
         "Main Interest": main_interest,
         "Your Expertise Level (Above Area)": main_expertise_level,
         "Additional Interest Areas (Optional)": additional_interest,
         "Your Expertise Level (Optional)": additional_level if additional_level else "",
         "Future Aspirations": future_aspiration,
-        
+
         # Section 3
         "When making decisions about how to spend your time or energy, what motivates you the most?": ", ".join(motivations),
         "When you're unsure about your next step, the guidance you prefer is": guidance_pref,
@@ -233,10 +237,12 @@ def generate_mentee(i: int, existing_rolls: set) -> Dict:
         "When you commit to something, what best describes how you usually handle it?": commitment_style,
     }
 
+
 def get_dummy_mentees(n: int = 30) -> List[Dict]:
     """Generate n mentees with unique campus rolls"""
     existing_rolls = set()
     return [generate_mentee(i, existing_rolls) for i in range(n)]
+
 
 # =======================
 # VALIDATION
@@ -245,44 +251,110 @@ def get_dummy_mentees(n: int = 30) -> List[Dict]:
 def validate_mentee_data(mentees: List[Dict]) -> List[str]:
     """Validate mentees match form constraints"""
     errors = []
-    
+
     for i, m in enumerate(mentees):
         # Required fields
         required = ["Name", "Campus Roll Number", "Personal email address", 
                    "Main Interest", "Your Expertise Level (Above Area)",
                    "Future Aspirations"]
-        
+
         for field in required:
             if not m.get(field):
                 errors.append(f"Mentee {i}: missing required field '{field}'")
-        
+
         # Expertise level range (mentees are 1-3)
         main_level = m.get("Your Expertise Level (Above Area)")
         if main_level and not (1 <= main_level <= 5):
             errors.append(f"Mentee {i}: Main expertise level must be 1-5, got {main_level}")
-    
+
     # Unique emails
     emails = [m.get("Personal email address") for m in mentees]
     if len(emails) != len(set(emails)):
         errors.append("Duplicate email addresses found")
-    
+
     # Unique campus rolls
     rolls = [m.get("Campus Roll Number") for m in mentees]
     if len(rolls) != len(set(rolls)):
         errors.append("Duplicate campus roll numbers found")
-    
+
     return errors
 
+
 # =======================
-# EXCEL EXPORT
+# SQL EXPORT (NEW!)
 # =======================
 
-def export_to_excel(mentees: List[Dict]):
-    """Export to Excel matching Google Form format"""
-    
-    mentee_df = pd.DataFrame(mentees)
-    mentee_df.to_excel("dummy_mentee_responses.xlsx", index=False)
-    print(f"✅ Saved {len(mentees)} mentee responses to dummy_mentee_responses.xlsx")
+def export_to_sql(mentees: List[Dict], filename: str = "mentee_dummy_data.sql"):
+    """Export mentee data as SQL INSERT statements for Person B"""
+
+    with open(filename, 'w', encoding='utf-8') as f:
+        # Write header
+        f.write("-- Dummy Mentee Data for Hack-A-Week 2026\n")
+        f.write(f"-- Generated: {datetime.now().strftime('%B %d, %Y %H:%M')}\n")
+        f.write(f"-- Total mentees: {len(mentees)}\n")
+        f.write("-- This file uses Person A's schema definition\n\n")
+
+        for mentee in mentees:
+            # Generate embedding vector (384 dimensions)
+            embedding = generate_realistic_embedding(384)
+            embedding_str = '[' + ','.join(f"{x:.6f}" for x in embedding) + ']'
+
+            # Escape single quotes for SQL
+            def escape(text):
+                if text is None or text == "":
+                    return ""
+                return str(text).replace("'", "''")
+
+            # Handle optional numeric field
+            additional_level = mentee.get('Your Expertise Level (Optional)')
+            if additional_level and str(additional_level).strip():
+                additional_level_sql = str(additional_level)
+            else:
+                additional_level_sql = "NULL"
+
+            # Build INSERT statement
+            sql = f"""INSERT INTO mentees (
+    name, 
+    campus_roll, 
+    email, 
+    hobby, 
+    main_interest, 
+    main_interest_level, 
+    additional_interest, 
+    additional_interest_level, 
+    future_aspirations, 
+    motivations, 
+    guidance_preference, 
+    feedback_style, 
+    discussion_style, 
+    disagreement_approach, 
+    commitment_style, 
+    embedding
+) VALUES (
+    '{escape(mentee['Name'])}',
+    '{escape(mentee['Campus Roll Number'])}',
+    '{escape(mentee['Personal email address'])}',
+    '{escape(mentee.get('Hobby (Optional)', ''))}',
+    '{escape(mentee['Main Interest'])}',
+    {mentee['Your Expertise Level (Above Area)']},
+    '{escape(mentee.get('Additional Interest Areas (Optional)', ''))}',
+    {additional_level_sql},
+    '{escape(mentee['Future Aspirations'])}',
+    '{escape(mentee["When making decisions about how to spend your time or energy, what motivates you the most?"])}',
+    '{escape(mentee["When you're unsure about your next step, the guidance you prefer is"])}',
+    '{escape(mentee["When receiving feedback, you usually prefer it to be"])}',
+    '{escape(mentee["In a discussion where ideas are being exchanged, you usually"])}',
+    '{escape(mentee["If a mentor suggests an approach you believe is wrong, you are most likely to"])}',
+    '{escape(mentee["When you commit to something, what best describes how you usually handle it?"])}',
+    '{embedding_str}'
+);
+
+"""
+            f.write(sql)
+
+    print(f"✅ Generated {len(mentees)} SQL INSERT statements")
+    print(f"📁 File saved: {filename}")
+
 
 # =======================
 # MAIN
@@ -290,12 +362,12 @@ def export_to_excel(mentees: List[Dict]):
 
 if __name__ == "__main__":
     print("🧪 Generating dummy MENTEE data for Hack-A-Week 2026...\n")
-    
-    # Generate
+
+    # Generate 30 test profiles (matching mentor count)
     mentees = get_dummy_mentees(30)
-    
+
     print(f"✅ Generated {len(mentees)} mentees\n")
-    
+
     # Validate
     errors = validate_mentee_data(mentees)
     if errors:
@@ -304,29 +376,33 @@ if __name__ == "__main__":
             print(f"   - {error}")
         if len(errors) > 5:
             print(f"   ... and {len(errors) - 5} more")
+        print("\n⚠️  Proceeding with SQL generation anyway...\n")
     else:
-        print("✅ All mentee data valid!")
-    
-    # Sample
-    print("\n📋 Sample Mentee:")
+        print("✅ All mentee data valid!\n")
+
+    # Sample preview
+    print("📋 Sample Mentee (first entry):")
     sample = mentees[0]
-    for key, value in sample.items():
-        if value:  # Only show non-empty
-            print(f"   {key}: {value}")
-    
+    for key, value in list(sample.items())[:8]:
+        if value:
+            display_value = str(value)[:30] + "..." if len(str(value)) > 30 else value
+            print(f"   {key}: {display_value}")
+    print("   ... (and more fields)\n")
+
     # Test embedding
-    print("\n🔢 Test Embedding:")
-    emb = generate_realistic_embedding()
-    print(f"   Length: {len(emb)}")
-    print(f"   Norm: {np.linalg.norm(emb):.4f}")
-    print(f"   Sample: {emb[:5]}...")
-    
-    # Export
-    print("\n💾 Exporting to Excel...")
-    export_to_excel(mentees)
-    
-    print("\n🎉 Mentee dummy data generation complete!")
-    print("\n📦 Functions available for Person B:")
-    print("   from generate_dummy_data import get_dummy_mentees, generate_realistic_embedding")
-    print("\n📁 File created:")
-    print("   - dummy_mentee_responses.xlsx (30 mentees)")
+    print("🔢 Test Embedding:")
+    emb = generate_realistic_embedding(384)
+    print(f"   Length: {len(emb)} dimensions")
+    print(f"   Norm: {np.linalg.norm(emb):.4f} (should be ~1.0)")
+    print(f"   Sample: [{emb[0]:.4f}, {emb[1]:.4f}, {emb[2]:.4f}, ...]\n")
+
+    # Export to SQL
+    print("💾 Exporting to SQL file...")
+    export_to_sql(mentees, "mentorship-program/postgres/mentee_dummy_data.sql")
+
+    print("\n🎉 Complete! Ready for Person B's init_db.py")
+    print("\n📦 Deliverable:")
+    print("   ✓ mentee_dummy_data.sql (30 test mentee profiles)")
+    print("\n🔄 Next Step:")
+    print("   → Send mentee_dummy_data.sql to Person B")
+    print("   → Person B will load it into PostgreSQL database")
