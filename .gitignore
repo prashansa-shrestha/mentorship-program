@@ -17,4 +17,8 @@ generating_dataset/
 *.tmp
 
 .env
-.xslx
+*.xlsx
+
+*.db
+experiments/mlruns/
+experiments/experiment_results.csv
