@@ -1,0 +1,91 @@
+# Enhanced Experiment Configuration
+# Now supports multiple algorithms!
+
+database:
+  connection_string: "postgresql://postgres:password123@localhost:5432/mentorship_db"
+
+experiment:
+  name: "algorithm_comparison_2026"
+  description: "Comparing greedy, random, weighted_random, and top_k algorithms"
+
+runs:
+  # ===== GREEDY ALGORITHM TESTS =====
+
+  - name: "greedy_baseline_70_30"
+    parameters:
+      algorithm: "greedy"              # ← Specify algorithm here
+      semantic_weight: 0.7
+      expertise_weight: 0.3
+      notes: "Standard greedy with 70/30 split"
+
+  - name: "greedy_high_semantic_80_20"
+    parameters:
+      algorithm: "greedy"
+      semantic_weight: 0.8
+      expertise_weight: 0.2
+      notes: "Emphasize semantic similarity"
+
+  - name: "greedy_balanced_50_50"
+    parameters:
+      algorithm: "greedy"
+      semantic_weight: 0.5
+      expertise_weight: 0.5
+      notes: "Equal weighting"
+
+  # ===== RANDOM BASELINE =====
+
+  - name: "random_baseline"
+    parameters:
+      algorithm: "random"              # ← Different algorithm
+      random_seed: 42
+      notes: "Pure random matching for comparison"
+
+  - name: "random_seed_123"
+    parameters:
+      algorithm: "random"
+      random_seed: 123
+      notes: "Test with different seed"
+
+  # ===== WEIGHTED RANDOM =====
+
+  - name: "weighted_random_baseline"
+    parameters:
+      algorithm: "weighted_random"     # ← Another algorithm
+      random_seed: 42
+      notes: "Probabilistic selection based on scores"
+
+  # ===== TOP-K MATCHING =====
+
+  - name: "top_k_3"
+    parameters:
+      algorithm: "top_k"                # ← New algorithm type
+      top_k: 3
+      random_seed: 42
+      notes: "Pick randomly from top 3 candidates"
+
+  - name: "top_k_5"
+    parameters:
+      algorithm: "top_k"
+      top_k: 5
+      random_seed: 42
+      notes: "More diversity with top 5"
+
+  - name: "top_k_1"
+    parameters:
+      algorithm: "top_k"
+      top_k: 1
+      random_seed: 42
+      notes: "Top-1 is equivalent to pure greedy"
+
+# ===== HOW TO ADD YOUR OWN ALGORITHM =====
+#
+# 1. Add function to ALGORITHMS dict in run_config_experiments_enhanced.py
+# 2. Define it like:
+#    def my_algorithm(matcher, params):
+#        # your logic
+#        return matches
+# 3. Add to config:
+#    - name: "my_test"
+#      parameters:
+#        algorithm: "my_algorithm"
+#        custom_param: 123
