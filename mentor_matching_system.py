@@ -2,12 +2,13 @@
 Mentor Matching System - Complete Implementation
 Fulfills Task 1 Requirements: PostgreSQL-based mentor-mentee matching
 """
-
+import json
 import psycopg2
 from psycopg2.extras import RealDictCursor
 from typing import List, Dict, Tuple
 import numpy as np
 import uuid
+import traceback
 from datetime import datetime
 
 
@@ -57,9 +58,23 @@ class MentorMatchingSystem:
                 WHERE e.embedding_type = 'combined'
                 ORDER BY mp.expertise_level DESC
             """)
-            return self.cursor.fetchall()
+            
+            results = []
+            for row in self.cursor.fetchall():
+                #  Parse string to numpy array
+                if isinstance(row['embedding_vector'], str):
+                    embedding = np.array(json.loads(row['embedding_vector']))
+                else:
+                    embedding = np.array(row['embedding_vector'])
+                
+                mentor = dict(row)
+                mentor['embedding_vector'] = embedding  # Replace with array
+                results.append(mentor)
+            
+            return results
         except Exception as e:
             print(f"Error fetching mentors: {e}")
+            traceback.print_exc()
             return []
 
     def get_all_mentees(self) -> List[Dict]:
@@ -82,9 +97,24 @@ class MentorMatchingSystem:
                 WHERE e.embedding_type = 'combined'
                 ORDER BY mp.main_interest_level
             """)
-            return self.cursor.fetchall()
+            
+            results = []
+            for row in self.cursor.fetchall():
+                # Convert pgvector string to numpy array
+                if isinstance(row['embedding_vector'], str):
+                    embedding = np.array(json.loads(row['embedding_vector']))
+                else:
+                    embedding = np.array(row['embedding_vector'])
+                
+                # Replace embedding_vector with parsed array
+                mentee = dict(row)
+                mentee['embedding_vector'] = embedding
+                results.append(mentee)
+            
+            return results
         except Exception as e:
             print(f"Error fetching mentees: {e}")
+            traceback.print_exc()
             return []
 
     def calculate_semantic_similarity(self, mentee_emb: np.ndarray, mentor_emb: np.ndarray) -> float:
@@ -119,6 +149,7 @@ class MentorMatchingSystem:
             return (similarity + 1) / 2
         except Exception as e:
             print(f"Error calculating similarity: {e}")
+            traceback.print_exc()
             return 0.0
 
     def calculate_expertise_score(self, mentee_level: int, mentor_level: int) -> float:
@@ -151,6 +182,7 @@ class MentorMatchingSystem:
                 return 0.1  # Too large or negative gap
         except Exception as e:
             print(f"Error calculating expertise score: {e}")
+            traceback.print_exc()
             return 0.0
 
     def calculate_combined_score(self, semantic: float, expertise: float) -> float:
@@ -254,6 +286,7 @@ class MentorMatchingSystem:
 
         except Exception as e:
             print(f"Error generating matches: {e}")
+            traceback.print_exc()
             return []
 
     def save_matches_to_db(self, matches: List[Dict]) -> int:
@@ -270,30 +303,38 @@ class MentorMatchingSystem:
             successful_inserts = 0
 
             for match in matches:
-                self.cursor.execute("""
-                    INSERT INTO matches (
-                        match_id, 
-                        mentor_id, 
-                        mentee_id, 
-                        algorithm_name,
-                        semantic_score, 
-                        expertise_score, 
-                        final_score, 
-                        status,
-                        created_at
-                    ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
-                """, (
-                    str(uuid.uuid4()),
-                    match['mentor_id'],
-                    match['mentee_id'],
-                    'greedy_capacity_constrained',
-                    match['semantic_score'],
-                    match['expertise_score'],
-                    match['final_score'],
-                    'pending',
-                    datetime.now()
-                ))
-                successful_inserts += 1
+                try:
+                    self.cursor.execute("""
+                        INSERT INTO matches (
+                            match_id, 
+                            mentor_id, 
+                            mentee_id, 
+                            algorithm_name,
+                            semantic_score, 
+                            expertise_score, 
+                            final_score, 
+                            status,
+                            created_at
+                        ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
+                        ON CONFLICT (mentor_id, mentee_id) DO NOTHING
+                    """, (
+                        str(uuid.uuid4()),
+                        match['mentor_id'],
+                        match['mentee_id'],
+                        'greedy_capacity_constrained',
+                        float(match['semantic_score']),
+                        float(match['expertise_score']),
+                        float(match['final_score']),
+                        'pending',
+                        datetime.now()
+                    ))
+                    
+                    if self.cursor.rowcount > 0:
+                        successful_inserts += 1
+                        
+                except Exception as e:
+                    print(f"  ⚠️ Skipping duplicate match: {match['mentor_id'][:16]} <-> {match['mentee_id'][:16]}")
+                    continue
 
             self.conn.commit()
             print(f"✓ Saved {successful_inserts} matches to database")
@@ -302,7 +343,9 @@ class MentorMatchingSystem:
         except Exception as e:
             self.conn.rollback()
             print(f"Error saving matches: {e}")
+            traceback.print_exc()
             return 0
+
 
     def close(self):
         """Close database connection."""
@@ -314,6 +357,8 @@ class MentorMatchingSystem:
             print("✓ Database connection closed")
         except Exception as e:
             print(f"Error closing connection: {e}")
+            traceback.print_exc()
+            return []
 
 
 # Usage Example
@@ -348,3 +393,4 @@ if __name__ == "__main__":
 
     except Exception as e:
         print(f"Error in main execution: {e}")
+        traceback.print_exc()
