@@ -1,13 +1,9 @@
-"""
-Dummy Mentor Data Generator - Mentors Only
-Hack-A-Week 2026 Mentorship Program
-Generated: January 21, 2026
-"""
-
+import pandas as pd
 import random
 import numpy as np
-import pandas as pd
 from typing import List, Dict
+from datetime import datetime
+
 
 # =======================
 # CONFIGURATION
@@ -124,6 +120,7 @@ CONTACT_METHODS = [
     "Telegram - @username"
 ]
 
+
 # =======================
 # EMBEDDING GENERATOR
 # =======================
@@ -136,6 +133,7 @@ def generate_realistic_embedding(dim=384) -> List[float]:
         vec = vec / norm
     return vec.tolist()
 
+
 # =======================
 # MENTOR GENERATOR
 # =======================
@@ -144,7 +142,7 @@ def generate_campus_roll(stream: str, existing_rolls: set) -> str:
     """Generate unique campus roll number"""
     dept_code = DEPT_CODES.get(stream, "BCT")
     batch = random.choice(BATCH_YEARS)
-    
+
     # Generate unique roll
     for _ in range(100):
         roll_num = random.randint(1, 150)
@@ -152,59 +150,46 @@ def generate_campus_roll(stream: str, existing_rolls: set) -> str:
         if roll not in existing_rolls:
             existing_rolls.add(roll)
             return roll
-    
+
     # Fallback
     roll_num = len(existing_rolls) + 1
     return f"{batch}{dept_code}{roll_num:03d}"
 
+
 def generate_mentor(i: int, existing_rolls: set) -> Dict:
     """Generate realistic mentor matching your exact Google Form"""
-    
+
     first = random.choice(FIRST_NAMES)
     last = random.choice(LAST_NAMES)
-    
+
     # Section 1: Basic Information
-    # Q6: Engineering stream (typically 1-2 selections)
     num_streams = random.choices([1, 2], weights=[0.7, 0.3])[0]
     eng_streams = random.sample(ENGINEERING_STREAMS, num_streams)
     primary_stream = eng_streams[0]
-    
-    # Q2: Campus roll based on primary stream
+
     campus_roll = generate_campus_roll(primary_stream, existing_rolls)
-    
-    # Q5: Hobby (70% have it)
     hobby = random.choice(HOBBIES) if random.random() < 0.7 else ""
-    
+
     # Section 2: Expertise
-    # Q7: Experience (typically 1-2 selections)
     num_exp = random.choices([1, 2], weights=[0.6, 0.4])[0]
     experiences = random.sample(EXPERIENCE_TYPES, num_exp)
-    
-    # Q8: Work affiliation (if has Industry/Academia/Entrepreneurship)
+
     has_work = any(e in ["Industry", "Academia", "Entrepreneurship"] for e in experiences)
     work_affiliation = random.choice(WORK_AFFILIATIONS) if has_work else ""
-    
-    # Q9: Main expertise
+
     main_expertise = random.choice(MAIN_EXPERTISE_AREAS)
-    
-    # Q10: Main expertise level (mentors are 3-5)
     main_expertise_level = random.choices([3, 4, 5], weights=[0.3, 0.5, 0.2])[0]
-    
-    # Q11-12: Additional skills (50% have them)
+
     has_additional = random.random() < 0.5
     additional_expertise = random.choice(ADDITIONAL_SKILLS) if has_additional else ""
     additional_level = random.randint(2, 4) if has_additional else None
-    
-    # Q13: Mentee capacity
+
     mentee_capacity = random.choices([1, 2, 3, 4], weights=[0.1, 0.3, 0.4, 0.2])[0]
-    
-    # Q14: Hours per week
     hours_per_week = random.choices(
         ["Less than 1 hour", "1–2 hours", "2–3 hours", "3+ hours"],
         weights=[0.1, 0.4, 0.4, 0.1]
     )[0]
-    
-    # Q15: Contact method
+
     contact_template = random.choice(CONTACT_METHODS)
     if "instagram.com" in contact_template:
         contact = f"Instagram - https://www.instagram.com/{first.lower()}{last.lower()}"
@@ -214,27 +199,22 @@ def generate_mentor(i: int, existing_rolls: set) -> Dict:
         contact = f"WhatsApp - +977-98{random.randint(10000000, 99999999)}"
     else:
         contact = contact_template.replace("username", f"{first.lower()}{i}")
-    
+
     # Section 3: Mentoring Style
-    # Q16: Motivations (select up to 2)
     num_motivations = random.choices([1, 2], weights=[0.3, 0.7])[0]
     motivations = random.sample(MOTIVATIONS, num_motivations)
-    
-    # Q17-21: Single choice questions
+
     guidance_pref = random.choice(GUIDANCE_PREFERENCES)
     feedback_style = random.choice(FEEDBACK_STYLES)
     discussion_style = random.choice(DISCUSSION_STYLES)
     disagreement_approach = random.choice(DISAGREEMENT_APPROACHES)
     commitment_style = random.choice(COMMITMENT_STYLES)
-    
+
     return {
-        # Section 1
         "Name": f"{first} {last}",
         "Campus Roll Number": campus_roll,
         "Personal email address": f"{first.lower()}.{last.lower()}{i:02d}@gmail.com",
         "Hobby (Optional)": hobby,
-        
-        # Section 2
         "Engineering stream you will mentor for": ", ".join(eng_streams),
         "Your Experience": ", ".join(experiences),
         "Current Work Affiliation (if applicable)": work_affiliation,
@@ -245,8 +225,6 @@ def generate_mentor(i: int, existing_rolls: set) -> Dict:
         "How many mentees will you be taking?": mentee_capacity,
         "How many hours per week can you realistically dedicate to mentoring sessions ?": hours_per_week,
         "Where should your mentee contact you?": contact,
-        
-        # Section 3
         "When making decisions about how to spend your time or energy, what motivates you the most?": ", ".join(motivations),
         "When you're unsure about your next step, the guidance you prefer is": guidance_pref,
         "When giving feedback, you usually prefer it to be": feedback_style,
@@ -255,10 +233,12 @@ def generate_mentor(i: int, existing_rolls: set) -> Dict:
         "When you commit to something, what best describes how you usually handle it?": commitment_style,
     }
 
+
 def get_dummy_mentors(n: int = 20) -> List[Dict]:
     """Generate n mentors with unique campus rolls"""
     existing_rolls = set()
     return [generate_mentor(i, existing_rolls) for i in range(n)]
+
 
 # =======================
 # VALIDATION
@@ -267,94 +247,134 @@ def get_dummy_mentors(n: int = 20) -> List[Dict]:
 def validate_mentor_data(mentors: List[Dict]) -> List[str]:
     """Validate mentors match form constraints"""
     errors = []
-    
+
     for i, m in enumerate(mentors):
-        # Required fields
         required = ["Name", "Campus Roll Number", "Personal email address", 
                    "Main Expertise", "Your Expertise Level (Above Area)",
                    "How many mentees will you be taking?",
                    "Where should your mentee contact you?"]
-        
+
         for field in required:
             if not m.get(field):
                 errors.append(f"Mentor {i}: missing required field '{field}'")
-        
-        # Expertise level range
+
         main_level = m.get("Your Expertise Level (Above Area)")
         if main_level and not (1 <= main_level <= 5):
             errors.append(f"Mentor {i}: Main expertise level must be 1-5, got {main_level}")
-        
-        # Mentee capacity
+
         capacity = m.get("How many mentees will you be taking?")
         if capacity and capacity not in [1, 2, 3, 4]:
             errors.append(f"Mentor {i}: Mentee capacity must be 1-4, got {capacity}")
-    
-    # Unique emails
+
     emails = [m.get("Personal email address") for m in mentors]
     if len(emails) != len(set(emails)):
         errors.append("Duplicate email addresses found")
-    
-    # Unique campus rolls
+
     rolls = [m.get("Campus Roll Number") for m in mentors]
     if len(rolls) != len(set(rolls)):
         errors.append("Duplicate campus roll numbers found")
-    
+
     return errors
 
+
 # =======================
-# EXCEL EXPORT
+# SQL EXPORT (NEW!)
 # =======================
 
-def export_to_excel(mentors: List[Dict]):
-    """Export to Excel matching Google Form format"""
-    
-    mentor_df = pd.DataFrame(mentors)
-    mentor_df.to_excel("dummy_mentor_responses.xlsx", index=False)
-    print(f"✅ Saved {len(mentors)} mentor responses to dummy_mentor_responses.xlsx")
+def export_to_sql(mentors: List[Dict], filename: str = "generate_dummy_data.sql"):
+    """Export mentor data as SQL INSERT statements for Person B"""
+
+    with open(filename, 'w', encoding='utf-8') as f:
+        # Write header
+        f.write("-- Dummy Mentor Data for Hack-A-Week 2026\n")
+        f.write(f"-- Generated: {datetime.now().strftime('%B %d, %Y %H:%M')}\n")
+        f.write(f"-- Total mentors: {len(mentors)}\n")
+        f.write("-- This file uses Person A's schema definition\n\n")
+
+        for mentor in mentors:
+            # Generate embedding vector (384 dimensions)
+            embedding = generate_realistic_embedding(384)
+            embedding_str = '[' + ','.join(f"{x:.6f}" for x in embedding) + ']'
+
+            # Escape single quotes for SQL
+            def escape(text):
+                if text is None or text == "":
+                    return ""
+                return str(text).replace("'", "''")
+
+            # Handle optional numeric field
+            additional_level = mentor.get('Your Expertise Level (Optional)')
+            if additional_level and str(additional_level).strip():
+                additional_level_sql = str(additional_level)
+            else:
+                additional_level_sql = "NULL"
+
+            # Build INSERT statement
+            sql = f"""INSERT INTO mentors (
+    name, 
+    campus_roll, 
+    email, 
+    hobby, 
+    engineering_streams, 
+    experience_types, 
+    work_affiliation, 
+    main_expertise, 
+    main_expertise_level, 
+    additional_expertise, 
+    additional_expertise_level, 
+    mentee_capacity, 
+    hours_per_week, 
+    contact_method, 
+    motivations, 
+    guidance_preference, 
+    feedback_style, 
+    discussion_style, 
+    disagreement_approach, 
+    commitment_style, 
+    embedding
+) VALUES (
+    '{escape(mentor['Name'])}',
+    '{escape(mentor['Campus Roll Number'])}',
+    '{escape(mentor['Personal email address'])}',
+    '{escape(mentor.get('Hobby (Optional)', ''))}',
+    '{escape(mentor['Engineering stream you will mentor for'])}',
+    '{escape(mentor['Your Experience'])}',
+    '{escape(mentor.get('Current Work Affiliation (if applicable)', ''))}',
+    '{escape(mentor['Main Expertise'])}',
+    {mentor['Your Expertise Level (Above Area)']},
+    '{escape(mentor.get('Additional Mentorship Areas (Optional)', ''))}',
+    {additional_level_sql},
+    {mentor['How many mentees will you be taking?']},
+    '{escape(mentor['How many hours per week can you realistically dedicate to mentoring sessions ?'])}',
+    '{escape(mentor['Where should your mentee contact you?'])}',
+    '{escape(mentor["When making decisions about how to spend your time or energy, what motivates you the most?"])}',
+    '{escape(mentor["When you're unsure about your next step, the guidance you prefer is"])}',
+    '{escape(mentor["When giving feedback, you usually prefer it to be"])}',
+    '{escape(mentor["In a discussion where ideas are being exchanged, you usually"])}',
+    '{escape(mentor["If a mentee suggests an approach you believe is wrong, you are most likely to"])}',
+    '{escape(mentor["When you commit to something, what best describes how you usually handle it?"])}',
+    '{embedding_str}'
+);
+
+"""
+            f.write(sql)
+
+    print(f"✅ Generated {len(mentors)} SQL INSERT statements")
+    print(f"📁 File saved: {filename}")
+
 
 # =======================
 # MAIN
 # =======================
 
+
 if __name__ == "__main__":
-    print("🧪 Generating dummy MENTOR data for Hack-A-Week 2026...\n")
+    print("🧪 Generating dummy data...\n")
     
-    # Generate
+    # For mentors:
     mentors = get_dummy_mentors(20)
     
-    print(f"✅ Generated {len(mentors)} mentors\n")
-    
-    # Validate
-    errors = validate_mentor_data(mentors)
-    if errors:
-        print(f"❌ {len(errors)} validation errors:")
-        for error in errors[:5]:
-            print(f"   - {error}")
-        if len(errors) > 5:
-            print(f"   ... and {len(errors) - 5} more")
-    else:
-        print("✅ All mentor data valid!")
-    
-    # Sample
-    print("\n📋 Sample Mentor:")
-    sample = mentors[0]
-    for key, value in sample.items():
-        if value:  # Only show non-empty
-            print(f"   {key}: {value}")
-    
-    # Test embedding
-    print("\n🔢 Test Embedding:")
-    emb = generate_realistic_embedding()
-    print(f"   Length: {len(emb)}")
-    print(f"   Norm: {np.linalg.norm(emb):.4f}")
-    print(f"   Sample: {emb[:5]}...")
-    
-    # Export
-    print("\n💾 Exporting to Excel...")
-    export_to_excel(mentors)
-    
-    print("\n🎉 Mentor dummy data generation complete!")
-    print("\n📦 Functions available for Person B:")
-    print("   from generate_dummy_data import get_dummy_mentors, generate_realistic_embedding")
-    print("\n📁 File created:")
-    print("   - dummy_mentor_responses.xlsx (20 mentors)")
+    # Export to Excel (not SQL)
+    df = pd.DataFrame(mentors)
+    df.to_excel("dummy_mentor_responses.xlsx", index=False)
+    print(f"✅ Saved to dummy_mentor_responses.xlsx")

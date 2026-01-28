@@ -6,6 +6,7 @@ Generated for Person C - Uses Person A's Schema
 
 import random
 import numpy as np
+import pandas as pd
 from typing import List, Dict
 from datetime import datetime
 
@@ -360,49 +361,14 @@ def export_to_sql(mentees: List[Dict], filename: str = "mentee_dummy_data.sql"):
 # MAIN
 # =======================
 
+
 if __name__ == "__main__":
-    print("🧪 Generating dummy MENTEE data for Hack-A-Week 2026...\n")
-
-    # Generate 30 test profiles (matching mentor count)
-    mentees = get_dummy_mentees(30)
-
-    print(f"✅ Generated {len(mentees)} mentees\n")
-
-    # Validate
-    errors = validate_mentee_data(mentees)
-    if errors:
-        print(f"❌ {len(errors)} validation errors:")
-        for error in errors[:5]:
-            print(f"   - {error}")
-        if len(errors) > 5:
-            print(f"   ... and {len(errors) - 5} more")
-        print("\n⚠️  Proceeding with SQL generation anyway...\n")
-    else:
-        print("✅ All mentee data valid!\n")
-
-    # Sample preview
-    print("📋 Sample Mentee (first entry):")
-    sample = mentees[0]
-    for key, value in list(sample.items())[:8]:
-        if value:
-            display_value = str(value)[:30] + "..." if len(str(value)) > 30 else value
-            print(f"   {key}: {display_value}")
-    print("   ... (and more fields)\n")
-
-    # Test embedding
-    print("🔢 Test Embedding:")
-    emb = generate_realistic_embedding(384)
-    print(f"   Length: {len(emb)} dimensions")
-    print(f"   Norm: {np.linalg.norm(emb):.4f} (should be ~1.0)")
-    print(f"   Sample: [{emb[0]:.4f}, {emb[1]:.4f}, {emb[2]:.4f}, ...]\n")
-
-    # Export to SQL
-    print("💾 Exporting to SQL file...")
-    export_to_sql(mentees, "mentorship-program/postgres/mentee_dummy_data.sql")
-
-    print("\n🎉 Complete! Ready for Person B's init_db.py")
-    print("\n📦 Deliverable:")
-    print("   ✓ mentee_dummy_data.sql (30 test mentee profiles)")
-    print("\n🔄 Next Step:")
-    print("   → Send mentee_dummy_data.sql to Person B")
-    print("   → Person B will load it into PostgreSQL database")
+    print("🧪 Generating dummy data...\n")
+    
+    # For mentors:
+    mentees = get_dummy_mentees(20)
+    
+    # Export to Excel (not SQL)
+    df = pd.DataFrame(mentees)
+    df.to_excel("dummy_mentee_responses.xlsx", index=False)
+    print(f"✅ Saved to dummy_mentee_responses.xlsx")
