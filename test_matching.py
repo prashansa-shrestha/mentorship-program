@@ -1,17 +1,19 @@
 """
 Test Script for Mentor Matching System
 Tests matching algorithm, validates results, and saves to database
+Updated with test utilities separation
 """
 
 import sys
 import traceback
 import logging
-from collections import defaultdict, Counter
+from collections import Counter
 import numpy as np
 from typing import Dict, List
 
-# Import the matching system
+# Import the matching system and test utilities
 from mentor_matching_system import MentorMatchingSystem
+from test_utilities import TestDatabaseHelper
 
 # Configure logging for detailed error messages
 logging.basicConfig(
@@ -56,24 +58,18 @@ def calculate_statistics(matches: List[Dict]) -> Dict:
     except Exception as e:
         print(f"\n  ✗ Error calculating statistics: {e}")
         logger.exception("Statistics calculation failed")
-        traceback.print_exc()
         return {}
 
 
 def analyze_capacity_utilization(matches: List[Dict], matcher: MentorMatchingSystem) -> Dict:
     """Analyze mentor capacity utilization."""
     try:
-        # Get all mentors
         mentors = matcher.get_all_mentors()
-
-        # Count matches per mentor
         mentor_match_counts = Counter(m['mentor_id'] for m in matches)
 
-        # Build capacity analysis
         at_capacity = 0
         under_capacity = 0
         over_capacity = 0
-
         mentor_stats = []
 
         for mentor in mentors:
@@ -109,7 +105,6 @@ def analyze_capacity_utilization(matches: List[Dict], matcher: MentorMatchingSys
     except Exception as e:
         print(f"\n  ✗ Error analyzing capacity: {e}")
         logger.exception("Capacity analysis failed")
-        traceback.print_exc()
         return {
             'at_capacity': 0,
             'under_capacity': 0,
@@ -120,44 +115,34 @@ def analyze_capacity_utilization(matches: List[Dict], matcher: MentorMatchingSys
 
 
 def analyze_mentee_coverage(matches: List[Dict], matcher: MentorMatchingSystem) -> Dict:
-    """Analyze how many mentors each mentee received."""
+    """Analyze how many mentors each mentee received (one-to-one matching)."""
     try:
-        # Get all mentees
         mentees = matcher.get_all_mentees()
-
-        # Count matches per mentee
         mentee_match_counts = Counter(m['mentee_id'] for m in matches)
 
-        # Categorize mentees
-        full_coverage = []  # 3+ mentors
-        partial_coverage = []  # 1-2 mentors
-        no_coverage = []  # 0 mentors
+        matched = []
+        unmatched = []
 
         for mentee in mentees:
             mentee_id = mentee['mentee_profile_id']
             match_count = mentee_match_counts.get(mentee_id, 0)
 
-            if match_count >= 3:
-                full_coverage.append((mentee_id, match_count))
-            elif match_count > 0:
-                partial_coverage.append((mentee_id, match_count))
-            else:
-                no_coverage.append(mentee_id)
+            if match_count == 1:
+                matched.append(mentee_id)
+            elif match_count == 0:
+                unmatched.append(mentee_id)
 
         return {
-            'full_coverage': full_coverage,
-            'partial_coverage': partial_coverage,
-            'no_coverage': no_coverage,
+            'matched': matched,
+            'unmatched': unmatched,
             'total_mentees': len(mentees)
         }
     except Exception as e:
         print(f"\n  ✗ Error analyzing mentee coverage: {e}")
         logger.exception("Mentee coverage analysis failed")
-        traceback.print_exc()
         return {
-            'full_coverage': [],
-            'partial_coverage': [],
-            'no_coverage': [],
+            'matched': [],
+            'unmatched': [],
             'total_mentees': 0
         }
 
@@ -182,7 +167,6 @@ def verify_database_save(matcher: MentorMatchingSystem, expected_count: int) -> 
     except Exception as e:
         print(f"\n  ✗ Verification error: {e}")
         logger.exception("Database verification failed")
-        traceback.print_exc()
         return False
 
 
@@ -231,12 +215,10 @@ def run_assertions(matches: List[Dict], stats: Dict, capacity_analysis: Dict):
     except AssertionError as e:
         print(f"\n  ❌ Assertion failed: {e}")
         logger.exception("Assertion error")
-        traceback.print_exc()
         return False
     except Exception as e:
         print(f"\n  ❌ Unexpected error: {e}")
         logger.exception("Unexpected error in assertions")
-        traceback.print_exc()
         return False
 
 
@@ -251,18 +233,27 @@ def main():
     try:
         # Initialize system
         matcher = MentorMatchingSystem(DB_CONFIG)
+        test_helper = TestDatabaseHelper(DB_CONFIG)
         print("  ✓ System initialized successfully")
 
     except Exception as e:
         print(f"\n  ✗ Failed to initialize system: {e}")
         logger.exception("System initialization failed")
-        traceback.print_exc()
-        
+
         print("\nPlease ensure:")
         print("  1. PostgreSQL is running")
         print("  2. Database credentials are correct")
         print("  3. Database schema is set up")
         sys.exit(1)
+
+    # Clear previous test data
+    print_section("Preparing Test Environment")
+
+    try:
+        cleared_count = test_helper.clear_matches()
+        print(f"  ✓ Cleared {cleared_count} existing matches for clean test")
+    except Exception as e:
+        print(f"  ⚠ Warning: Could not clear matches: {e}")
 
     # Run matching algorithm
     print_section("Running Matching Algorithm")
@@ -273,14 +264,14 @@ def main():
 
         if not matches:
             print("  ⚠ No matches generated - check data availability")
+            test_helper.close()
             matcher.close()
             sys.exit(0)
 
     except Exception as e:
         print(f"\n  ✗ Matching failed: {e}")
-        print(f"\n  Full error traceback:")
         logger.exception("Match generation failed")
-        traceback.print_exc()
+        test_helper.close()
         matcher.close()
         sys.exit(1)
 
@@ -288,9 +279,10 @@ def main():
     print_section("Match Statistics")
 
     stats = calculate_statistics(matches)
-    
+
     if not stats:
         print("  ⚠ Statistics calculation failed")
+        test_helper.close()
         matcher.close()
         sys.exit(1)
 
@@ -326,7 +318,7 @@ def main():
         if over_cap > 0:
             print("\n  ⚠ WARNING: Some mentors are over capacity!")
 
-        # Show top/bottom utilized mentors
+        # Show top utilized mentors
         sorted_mentors = sorted(
             capacity_analysis['mentor_details'],
             key=lambda x: x['new_matches'],
@@ -345,21 +337,15 @@ def main():
     coverage = analyze_mentee_coverage(matches, matcher)
 
     print(f"\n  Total Mentees: {coverage['total_mentees']}")
-    print(f"    Full coverage (3+ mentors):  {len(coverage['full_coverage'])}")
-    print(f"    Partial coverage (1-2):      {len(coverage['partial_coverage'])}")
-    print(f"    No coverage (0):             {len(coverage['no_coverage'])}")
+    print(f"    Matched (1 mentor):     {len(coverage['matched'])}")
+    print(f"    Unmatched (0 mentors):  {len(coverage['unmatched'])}")
 
-    if coverage['partial_coverage']:
-        print(f"\n  ⚠ Mentees with < 3 mentors:")
-        for mentee_id, count in coverage['partial_coverage']:
-            print(f"    {mentee_id[:16]}: {count} mentor(s)")
-
-    if coverage['no_coverage']:
+    if coverage['unmatched']:
         print(f"\n  ⚠ Unmatched mentees:")
-        for mentee_id in coverage['no_coverage'][:5]:  # Show first 5
+        for mentee_id in coverage['unmatched'][:5]:
             print(f"    {mentee_id[:16]}")
-        if len(coverage['no_coverage']) > 5:
-            print(f"    ... and {len(coverage['no_coverage']) - 5} more")
+        if len(coverage['unmatched']) > 5:
+            print(f"    ... and {len(coverage['unmatched']) - 5} more")
 
     # Run assertions
     assertions_passed = run_assertions(matches, stats, capacity_analysis)
@@ -378,7 +364,6 @@ def main():
     except Exception as e:
         print(f"\n  ✗ Failed to save matches: {e}")
         logger.exception("Database save failed")
-        traceback.print_exc()
         verification_passed = False
 
     # Final summary
@@ -391,11 +376,12 @@ def main():
     overall_success = len(matches) > 0 and assertions_passed and verification_passed
 
     if overall_success:
-        print("\n  🎉 ALL TESTS PASSED!")
+        print("\n  ALL TESTS PASSED!")
     else:
         print("\n  ⚠ SOME TESTS FAILED - Review output above")
 
     # Cleanup
+    test_helper.close()
     matcher.close()
 
     return 0 if overall_success else 1
