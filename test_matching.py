@@ -4,12 +4,21 @@ Tests matching algorithm, validates results, and saves to database
 """
 
 import sys
+import traceback
+import logging
 from collections import defaultdict, Counter
 import numpy as np
 from typing import Dict, List
 
 # Import the matching system
 from mentor_matching_system import MentorMatchingSystem
+
+# Configure logging for detailed error messages
+logging.basicConfig(
+    level=logging.ERROR,
+    format='%(asctime)s - %(levelname)s - %(message)s'
+)
+logger = logging.getLogger(__name__)
 
 
 def print_section(title: str):
@@ -24,104 +33,133 @@ def calculate_statistics(matches: List[Dict]) -> Dict:
     if not matches:
         return {}
 
-    semantic_scores = [m['semantic_score'] for m in matches]
-    expertise_scores = [m['expertise_score'] for m in matches]
-    final_scores = [m['final_score'] for m in matches]
+    try:
+        semantic_scores = [m['semantic_score'] for m in matches]
+        expertise_scores = [m['expertise_score'] for m in matches]
+        final_scores = [m['final_score'] for m in matches]
 
-    return {
-        'total_matches': len(matches),
-        'semantic_avg': np.mean(semantic_scores),
-        'semantic_std': np.std(semantic_scores),
-        'semantic_min': np.min(semantic_scores),
-        'semantic_max': np.max(semantic_scores),
-        'expertise_avg': np.mean(expertise_scores),
-        'expertise_std': np.std(expertise_scores),
-        'expertise_min': np.min(expertise_scores),
-        'expertise_max': np.max(expertise_scores),
-        'final_avg': np.mean(final_scores),
-        'final_std': np.std(final_scores),
-        'final_min': np.min(final_scores),
-        'final_max': np.max(final_scores)
-    }
+        return {
+            'total_matches': len(matches),
+            'semantic_avg': np.mean(semantic_scores),
+            'semantic_std': np.std(semantic_scores),
+            'semantic_min': np.min(semantic_scores),
+            'semantic_max': np.max(semantic_scores),
+            'expertise_avg': np.mean(expertise_scores),
+            'expertise_std': np.std(expertise_scores),
+            'expertise_min': np.min(expertise_scores),
+            'expertise_max': np.max(expertise_scores),
+            'final_avg': np.mean(final_scores),
+            'final_std': np.std(final_scores),
+            'final_min': np.min(final_scores),
+            'final_max': np.max(final_scores)
+        }
+    except Exception as e:
+        print(f"\n  ✗ Error calculating statistics: {e}")
+        logger.exception("Statistics calculation failed")
+        traceback.print_exc()
+        return {}
 
 
 def analyze_capacity_utilization(matches: List[Dict], matcher: MentorMatchingSystem) -> Dict:
     """Analyze mentor capacity utilization."""
-    # Get all mentors
-    mentors = matcher.get_all_mentors()
+    try:
+        # Get all mentors
+        mentors = matcher.get_all_mentors()
 
-    # Count matches per mentor
-    mentor_match_counts = Counter(m['mentor_id'] for m in matches)
+        # Count matches per mentor
+        mentor_match_counts = Counter(m['mentor_id'] for m in matches)
 
-    # Build capacity analysis
-    at_capacity = 0
-    under_capacity = 0
-    over_capacity = 0
+        # Build capacity analysis
+        at_capacity = 0
+        under_capacity = 0
+        over_capacity = 0
 
-    mentor_stats = []
+        mentor_stats = []
 
-    for mentor in mentors:
-        mentor_id = mentor['mentor_profile_id']
-        max_capacity = mentor['max_mentee_capacity']
-        current_count = mentor['current_mentee_count']
-        new_matches = mentor_match_counts.get(mentor_id, 0)
-        total_assigned = current_count + new_matches
+        for mentor in mentors:
+            mentor_id = mentor['mentor_profile_id']
+            max_capacity = mentor['max_mentee_capacity']
+            current_count = mentor['current_mentee_count']
+            new_matches = mentor_match_counts.get(mentor_id, 0)
+            total_assigned = current_count + new_matches
 
-        mentor_stats.append({
-            'mentor_id': mentor_id,
-            'max_capacity': max_capacity,
-            'current_count': current_count,
-            'new_matches': new_matches,
-            'total_assigned': total_assigned,
-            'remaining': max_capacity - total_assigned
-        })
+            mentor_stats.append({
+                'mentor_id': mentor_id,
+                'max_capacity': max_capacity,
+                'current_count': current_count,
+                'new_matches': new_matches,
+                'total_assigned': total_assigned,
+                'remaining': max_capacity - total_assigned
+            })
 
-        if total_assigned == max_capacity:
-            at_capacity += 1
-        elif total_assigned < max_capacity:
-            under_capacity += 1
-        else:
-            over_capacity += 1
+            if total_assigned == max_capacity:
+                at_capacity += 1
+            elif total_assigned < max_capacity:
+                under_capacity += 1
+            else:
+                over_capacity += 1
 
-    return {
-        'at_capacity': at_capacity,
-        'under_capacity': under_capacity,
-        'over_capacity': over_capacity,
-        'total_mentors': len(mentors),
-        'mentor_details': mentor_stats
-    }
+        return {
+            'at_capacity': at_capacity,
+            'under_capacity': under_capacity,
+            'over_capacity': over_capacity,
+            'total_mentors': len(mentors),
+            'mentor_details': mentor_stats
+        }
+    except Exception as e:
+        print(f"\n  ✗ Error analyzing capacity: {e}")
+        logger.exception("Capacity analysis failed")
+        traceback.print_exc()
+        return {
+            'at_capacity': 0,
+            'under_capacity': 0,
+            'over_capacity': 0,
+            'total_mentors': 0,
+            'mentor_details': []
+        }
 
 
 def analyze_mentee_coverage(matches: List[Dict], matcher: MentorMatchingSystem) -> Dict:
     """Analyze how many mentors each mentee received."""
-    # Get all mentees
-    mentees = matcher.get_all_mentees()
+    try:
+        # Get all mentees
+        mentees = matcher.get_all_mentees()
 
-    # Count matches per mentee
-    mentee_match_counts = Counter(m['mentee_id'] for m in matches)
+        # Count matches per mentee
+        mentee_match_counts = Counter(m['mentee_id'] for m in matches)
 
-    # Categorize mentees
-    full_coverage = []  # 3+ mentors
-    partial_coverage = []  # 1-2 mentors
-    no_coverage = []  # 0 mentors
+        # Categorize mentees
+        full_coverage = []  # 3+ mentors
+        partial_coverage = []  # 1-2 mentors
+        no_coverage = []  # 0 mentors
 
-    for mentee in mentees:
-        mentee_id = mentee['mentee_profile_id']
-        match_count = mentee_match_counts.get(mentee_id, 0)
+        for mentee in mentees:
+            mentee_id = mentee['mentee_profile_id']
+            match_count = mentee_match_counts.get(mentee_id, 0)
 
-        if match_count >= 3:
-            full_coverage.append((mentee_id, match_count))
-        elif match_count > 0:
-            partial_coverage.append((mentee_id, match_count))
-        else:
-            no_coverage.append(mentee_id)
+            if match_count >= 3:
+                full_coverage.append((mentee_id, match_count))
+            elif match_count > 0:
+                partial_coverage.append((mentee_id, match_count))
+            else:
+                no_coverage.append(mentee_id)
 
-    return {
-        'full_coverage': full_coverage,
-        'partial_coverage': partial_coverage,
-        'no_coverage': no_coverage,
-        'total_mentees': len(mentees)
-    }
+        return {
+            'full_coverage': full_coverage,
+            'partial_coverage': partial_coverage,
+            'no_coverage': no_coverage,
+            'total_mentees': len(mentees)
+        }
+    except Exception as e:
+        print(f"\n  ✗ Error analyzing mentee coverage: {e}")
+        logger.exception("Mentee coverage analysis failed")
+        traceback.print_exc()
+        return {
+            'full_coverage': [],
+            'partial_coverage': [],
+            'no_coverage': [],
+            'total_mentees': 0
+        }
 
 
 def verify_database_save(matcher: MentorMatchingSystem, expected_count: int) -> bool:
@@ -142,7 +180,9 @@ def verify_database_save(matcher: MentorMatchingSystem, expected_count: int) -> 
             print(f"  ✗ Verification failed: Expected {expected_count}, found {actual_count}")
             return False
     except Exception as e:
-        print(f"  ✗ Verification error: {e}")
+        print(f"\n  ✗ Verification error: {e}")
+        logger.exception("Database verification failed")
+        traceback.print_exc()
         return False
 
 
@@ -165,11 +205,13 @@ def run_assertions(matches: List[Dict], stats: Dict, capacity_analysis: Dict):
         # Assertion 3: Final score calculation is correct
         for match in matches:
             expected_final = (0.7 * match['semantic_score']) + (0.3 * match['expertise_score'])
-            assert abs(match['final_score'] - expected_final) < 0.001,                 f"Final score mismatch: {match['final_score']} vs {expected_final}"
+            assert abs(match['final_score'] - expected_final) < 0.001, \
+                f"Final score mismatch: {match['final_score']} vs {expected_final}"
         print("  ✓ Assertion 3: Final score calculation correct (70/30 split)")
 
         # Assertion 4: No capacity violations
-        assert capacity_analysis['over_capacity'] == 0,             f"{capacity_analysis['over_capacity']} mentors over capacity"
+        assert capacity_analysis['over_capacity'] == 0, \
+            f"{capacity_analysis['over_capacity']} mentors over capacity"
         print("  ✓ Assertion 4: No capacity violations")
 
         # Assertion 5: Statistics are reasonable
@@ -188,9 +230,13 @@ def run_assertions(matches: List[Dict], stats: Dict, capacity_analysis: Dict):
 
     except AssertionError as e:
         print(f"\n  ❌ Assertion failed: {e}")
+        logger.exception("Assertion error")
+        traceback.print_exc()
         return False
     except Exception as e:
         print(f"\n  ❌ Unexpected error: {e}")
+        logger.exception("Unexpected error in assertions")
+        traceback.print_exc()
         return False
 
 
@@ -198,7 +244,7 @@ def main():
     """Main test execution."""
 
     # Database configuration
-    DB_CONFIG = "postgresql://postgres:password123@localhost:5432/mentor_db"
+    DB_CONFIG = "postgresql://postgres:password123@localhost:5432/mentorship_db"
 
     print_section("Initializing Mentor Matching System")
 
@@ -208,7 +254,10 @@ def main():
         print("  ✓ System initialized successfully")
 
     except Exception as e:
-        print(f"  ✗ Failed to initialize system: {e}")
+        print(f"\n  ✗ Failed to initialize system: {e}")
+        logger.exception("System initialization failed")
+        traceback.print_exc()
+        
         print("\nPlease ensure:")
         print("  1. PostgreSQL is running")
         print("  2. Database credentials are correct")
@@ -228,7 +277,10 @@ def main():
             sys.exit(0)
 
     except Exception as e:
-        print(f"  ✗ Matching failed: {e}")
+        print(f"\n  ✗ Matching failed: {e}")
+        print(f"\n  Full error traceback:")
+        logger.exception("Match generation failed")
+        traceback.print_exc()
         matcher.close()
         sys.exit(1)
 
@@ -236,6 +288,11 @@ def main():
     print_section("Match Statistics")
 
     stats = calculate_statistics(matches)
+    
+    if not stats:
+        print("  ⚠ Statistics calculation failed")
+        matcher.close()
+        sys.exit(1)
 
     print(f"\n  Total Matches: {stats['total_matches']}")
     print(f"\n  Semantic Similarity Scores:")
@@ -256,30 +313,31 @@ def main():
     capacity_analysis = analyze_capacity_utilization(matches, matcher)
 
     total = capacity_analysis['total_mentors']
-    at_cap = capacity_analysis['at_capacity']
-    under_cap = capacity_analysis['under_capacity']
-    over_cap = capacity_analysis['over_capacity']
+    if total > 0:
+        at_cap = capacity_analysis['at_capacity']
+        under_cap = capacity_analysis['under_capacity']
+        over_cap = capacity_analysis['over_capacity']
 
-    print(f"\n  Total Mentors: {total}")
-    print(f"    At capacity:    {at_cap} ({at_cap/total*100:.1f}%)")
-    print(f"    Under capacity: {under_cap} ({under_cap/total*100:.1f}%)")
-    print(f"    Over capacity:  {over_cap} ({over_cap/total*100:.1f}%)")
+        print(f"\n  Total Mentors: {total}")
+        print(f"    At capacity:    {at_cap} ({at_cap/total*100:.1f}%)")
+        print(f"    Under capacity: {under_cap} ({under_cap/total*100:.1f}%)")
+        print(f"    Over capacity:  {over_cap} ({over_cap/total*100:.1f}%)")
 
-    if over_cap > 0:
-        print("\n  ⚠ WARNING: Some mentors are over capacity!")
+        if over_cap > 0:
+            print("\n  ⚠ WARNING: Some mentors are over capacity!")
 
-    # Show top/bottom utilized mentors
-    sorted_mentors = sorted(
-        capacity_analysis['mentor_details'],
-        key=lambda x: x['new_matches'],
-        reverse=True
-    )
+        # Show top/bottom utilized mentors
+        sorted_mentors = sorted(
+            capacity_analysis['mentor_details'],
+            key=lambda x: x['new_matches'],
+            reverse=True
+        )
 
-    print(f"\n  Top 5 Most Utilized Mentors:")
-    for mentor in sorted_mentors[:5]:
-        print(f"    {mentor['mentor_id'][:16]}: "
-              f"{mentor['new_matches']} new matches "
-              f"({mentor['total_assigned']}/{mentor['max_capacity']} total)")
+        print(f"\n  Top 5 Most Utilized Mentors:")
+        for mentor in sorted_mentors[:5]:
+            print(f"    {mentor['mentor_id'][:16]}: "
+                  f"{mentor['new_matches']} new matches "
+                  f"({mentor['total_assigned']}/{mentor['max_capacity']} total)")
 
     # Analyze mentee coverage
     print_section("Mentee Coverage Analysis")
@@ -318,7 +376,9 @@ def main():
         verification_passed = verify_database_save(matcher, saved_count)
 
     except Exception as e:
-        print(f"  ✗ Failed to save matches: {e}")
+        print(f"\n  ✗ Failed to save matches: {e}")
+        logger.exception("Database save failed")
+        traceback.print_exc()
         verification_passed = False
 
     # Final summary
