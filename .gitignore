@@ -16,7 +16,6 @@ generating_dataset/
 *.bak
 *.tmp
 
-.env
 *.xlsx
 
 *.db
