@@ -19,7 +19,7 @@ for table in tables:
         cursor.execute(f"DROP TABLE IF EXISTS {table} CASCADE")
         print(f"  ✓ Dropped {table}")
     except Exception as e:
-        print(f"  ⚠️  {table}: {e}")
+        print(f" {table}: {e}")
 
 conn.commit()
 

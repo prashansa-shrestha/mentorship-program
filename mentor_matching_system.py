@@ -346,24 +346,6 @@ class MentorMatchingSystem:
             traceback.print_exc()
             return 0
 
-    def clear_matches(self) -> bool:
-        """
-        Clear all matches from the database for testing purposes.
-        
-        Returns:
-            bool: True if successful
-        """
-        try:
-            self.cursor.execute("DELETE FROM matches")
-            self.conn.commit()
-            print("✓ Cleared all matches from database")
-            return True
-        except Exception as e:
-            self.conn.rollback()
-            print(f"Error clearing matches: {e}")
-            traceback.print_exc()
-            return False
-
 
     def close(self):
         """Close database connection."""

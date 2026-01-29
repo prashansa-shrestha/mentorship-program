@@ -1,17 +1,5 @@
-Here's a comprehensive documentation file for your project:
 
-## Create DATABASE_SETUP.md
 
-```bash
-cd ~/Desktop/Prashansa/project_repositories/mentorship-program
-nano DATABASE_SETUP.md
-```
-
-Or create it in your editor. Here's the content:
-
-***
-
-```markdown
 # Database Setup Guide
 **Mentorship Program - PostgreSQL + pgvector Setup**
 
@@ -96,8 +84,8 @@ python init_db.py
 
 **Expected output:**
 ```
-✅ Schema initialized successfully
-✅ Created tables: users, mentor_profiles, mentee_profiles, embeddings, matches
+ Schema initialized successfully
+ Created tables: users, mentor_profiles, mentee_profiles, embeddings, matches
 ```
 
 ### 4. Generate Dummy Data
@@ -120,12 +108,12 @@ python populate_minimal_db.py
 
 **Expected output:**
 ```
-📊 Loading dummy data from Excel files...
-✅ Loaded 20 mentors and 30 mentees
-📝 Inserting mentors...
-✅ Inserted 20 mentors with embeddings
-📝 Inserting mentees...
-✅ Inserted 30 mentees with embeddings
+ Loading dummy data from Excel files...
+ Loaded 20 mentors and 30 mentees
+ Inserting mentors...
+ Inserted 20 mentors with embeddings
+ Inserting mentees...
+ Inserted 30 mentees with embeddings
 ```
 
 ### 6. Run Matching Algorithm
@@ -140,7 +128,7 @@ python test_matching.py
 ✓ Matching completed: 20 matches generated
 ✓ All assertions passed!
 ✓ Saved 20 matches to database
-🎉 ALL TESTS PASSED!
+ ALL TESTS PASSED!
 ```
 
 ---
@@ -315,16 +303,8 @@ Or use environment variables (recommended for production).
 **Database:** PostgreSQL 17 with pgvector extension  
 **Matching Algorithm:** Greedy capacity-constrained with semantic + expertise scoring  
 **Generated:** January 2026
-```
 
-***
-
-## Save and Commit
-
-```bash
-git add DATABASE_SETUP.md
-git commit -m "Add comprehensive database setup documentation"
-git push
-```
-
-This documentation covers everything someone needs to set up and understand your database system!
+## Authors
+**Prashansa Shrestha,**
+**Parbat Pandey,**
+**Pratap Kunwar**
