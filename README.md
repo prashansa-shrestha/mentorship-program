@@ -268,17 +268,5 @@ Some suggested checks:
 
 These tests can be automated with small Python scripts in the `postgres/` or `src/` directories.
 
-***
-
-## Roadmap
-
-Planned improvements:
-
-- Replace random dummy embeddings with **real text embeddings** from `sentence-transformers` once real data is available.
-- Add additional scoring factors:
-  - Hobbies / MBTI‑like personality compatibility.
-  - Learning/feedback style alignment from survey questions.
-
-***
 
 ***
